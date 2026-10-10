@@ -1,0 +1,3286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一封可以走进去的信</title>
+<meta name="theme-color" content="#0b0d13">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=ZCOOL+QingKe+HuangYou&family=Press+Start+2P&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23171a26'/%3E%3Crect x='4' y='1' width='8' height='6' fill='%23e8934a'/%3E%3Crect x='5' y='3' width='2' height='2' fill='%231e1e2f'/%3E%3Crect x='9' y='3' width='2' height='2' fill='%231e1e2f'/%3E%3Crect x='4' y='7' width='8' height='6' fill='%23f6efe0'/%3E%3Crect x='12' y='5' width='3' height='6' fill='%23e8934a'/%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   表现层样式（当前沿用旧版像素皮肤，之后可整体换肤）
+   换视觉 ≠ 改逻辑：逻辑层只认 Assets 语义 ID，不认具体样式。
+   ============================================================ */
+:root{
+  --bg:#0b0d13;
+  --panel:#171a26;
+  --panel2:#232741;
+  --line:#3a4058;
+  --ink:#f2e8cf;
+  --dim:#8f88ab;
+  --gold:#ffd166;
+  --accent:#e8934a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;touch-action:manipulation}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Courier New","NSimSun","SimSun",monospace;
+  min-height:100vh;
+  overscroll-behavior:none;
+  -webkit-tap-highlight-color:transparent;
+}
+/* 手机端主布局：场景铺满全屏，对话条浮在底部，顶部 HUD（第N站 / 相册） */
+#screen{
+  position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden;
+  background:#0b0d13;
+}
+#canvaswrap{position:absolute;inset:0;overflow:hidden;background:#171a26}
+#scene{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+#scanlines{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px);opacity:.5}
+/* ===== 顶部 HUD ===== */
+#hud{
+  position:absolute;top:0;left:0;right:0;z-index:7;
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  pointer-events:none;
+}
+#hud .pxbtn{pointer-events:auto}
+#station{
+  background:rgba(20,24,36,.92);border:2px solid #000;box-shadow:0 0 0 2px #2c3247;
+  color:var(--gold);font-size:12px;padding:3px 10px;letter-spacing:2px;
+  font-family:monospace;white-space:nowrap;
+}
+#hudright{display:flex;gap:6px;pointer-events:auto;margin-left:auto}
+.pxbtn{
+  font-family:inherit;font-size:12px;color:var(--ink);
+  background:var(--panel2);border:2px solid #000;
+  box-shadow:inset 2px 2px 0 #3a4058,inset -2px -2px 0 #0d0f18;
+  padding:2px 9px;cursor:pointer;line-height:1.4;
+}
+.pxbtn:hover{background:#2b3150}
+.pxbtn:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.pxbtn:active{transform:translate(1px,1px);box-shadow:inset 2px 2px 0 #0d0f18}
+.pxbtn svg{display:block;width:13px;height:13px}
+
+/* ===== 底部对话条（浮在场景上；场景画布止于它的上沿，保证地面物件可见可点） ===== */
+#dialogue{
+  position:absolute;left:0;right:0;bottom:0;z-index:5;
+  background:linear-gradient(to top, rgba(12,14,22,.96) 40%, rgba(12,14,22,.84));
+  border-top:2px solid #b8864f;
+  padding:12px 16px 14px;
+  max-height:46%;overflow:hidden;
+  cursor:pointer;user-select:none;
+  box-shadow:0 -6px 24px rgba(0,0,0,.35);
+}
+/* 顶部像素虚线装饰 */
+#dialogue::before{
+  content:"";position:absolute;top:5px;left:16px;right:16px;height:2px;
+  background-image:linear-gradient(90deg,#c9a876 50%,transparent 50%);
+  background-size:8px 2px;background-repeat:repeat-x;opacity:.4;
+}
+/* 左上角小像素爱心 */
+#dialogue::after{
+  content:"❤";position:absolute;top:3px;left:12px;font-size:10px;color:#d48a9a;
+  font-family:monospace;
+}
+.dinner{width:100%;margin:0 auto;position:relative;max-width:560px;padding-top:6px}
+#dtext{
+  font-size:16px;line-height:1.8;letter-spacing:.4px;color:#f6efe0;
+  min-height:40px;max-height:calc(40vh - 92px);overflow-y:auto;
+  scrollbar-width:thin;
+}
+#dbar{margin-top:8px;height:4px;background:rgba(255,255,255,.14);border-radius:2px;position:relative}
+#dbarfill{height:100%;width:0;background:#e8934a}
+#dnext{position:absolute;right:8px;bottom:8px;color:#ffd166;font-size:18px;animation:blink 1s steps(2) infinite;font-weight:bold}
+#dprev{position:absolute;right:36px;bottom:24px;color:#c9a876;font-size:14px;font-weight:bold;cursor:pointer;padding:2px 6px;opacity:.9}
+#dprev:active{transform:translateY(1px)}
+#hstext{max-height:2.7em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all}
+#controls{font-size:10px;color:#9a8f7d;margin-top:8px;letter-spacing:1px;text-align:right;padding-right:30px;font-family:monospace}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+#catbubble{
+  position:absolute;z-index:6;display:none;transform:translate(-50%,-100%);
+  left:50%;top:40%;
+  background:#e8f4ff;color:#1a3a5c;border:2px solid #000;box-shadow:3px 3px 0 rgba(0,0,0,.45);
+  padding:3px 9px;font-size:12px;white-space:nowrap;
+}
+#catbubble.bubble-item{
+  background:#ffffff;color:#333333;
+}
+#catbubble.show{display:block}
+#bingo{
+  position:absolute;z-index:6;display:none;transform:translate(-50%,-50%);
+  font-size:36px;font-weight:bold;color:var(--gold);letter-spacing:3px;
+  font-family:"Press Start 2P","Courier New",monospace;
+  text-shadow:2px 2px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000;
+}
+@keyframes bingoanim{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}30%{transform:translate(-50%,-50%) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.1)}}
+
+#wayarrow{
+  position:absolute;z-index:5;display:none;transform:translate(-50%,-50%);
+  width:28px;height:16px;pointer-events:none;
+  animation:arrowblink 0.8s ease-in-out infinite;
+}
+/* 鱼头：蓝色小圆 */
+.fish-head{
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:10px;height:10px;border-radius:50%;
+  background:#6ba3ff;
+  box-shadow:0 0 4px #6ba3ff, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+/* 鱼骨：横线 */
+.fish-bone{
+  position:absolute;left:8px;top:50%;transform:translateY(-50%);
+  width:18px;height:2px;background:#fff;
+  box-shadow:1px 0 0 #000, -1px 0 0 #000;
+}
+/* 肋骨：小三角（上下各 3 个） */
+.fish-rib{
+  position:absolute;width:0;height:0;
+  border-left:3px solid transparent;
+  border-right:3px solid transparent;
+}
+.fish-rib.r1{ left:12px; top:2px; border-bottom:5px solid #fff; }
+.fish-rib.r2{ left:18px; top:2px; border-bottom:5px solid #fff; }
+.fish-rib.r3{ left:24px; top:2px; border-bottom:5px solid #fff; }
+@keyframes arrowblink{0%,100%{opacity:0.4}50%{opacity:1}}
+
+#scenehint{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;
+  background:rgba(20,24,36,.92);border:2px solid #000;box-shadow:0 0 0 2px #2c3247;
+  color:var(--gold);font-size:12px;padding:5px 14px;letter-spacing:1px;
+  white-space:nowrap;max-width:92%;text-align:center;overflow:hidden;text-overflow:ellipsis;
+}
+#dpad{position:absolute;left:10px;bottom:130px;width:96px;height:96px;z-index:6;display:none}
+.dbtn{
+  position:absolute;width:44px;height:44px;padding:0;cursor:pointer;
+  background:rgba(35,39,65,.82);border:2px solid #000;
+  box-shadow:inset 2px 2px 0 #3a4058,inset -2px -2px 0 #0d0f18;
+  color:var(--ink);font-size:15px;display:flex;align-items:center;justify-content:center;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+.dbtn.active{background:#2b3150}
+.dbtn:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.dbtn svg{display:block;width:16px;height:16px}
+#dp-up{top:0;left:26px}
+#dp-left{top:26px;left:0}
+#dp-right{top:26px;left:52px}
+#dp-down{top:52px;left:26px}
+@media (pointer:coarse){#dpad{display:block}}
+
+.overlay{position:absolute;inset:0;z-index:20;background:rgba(7,8,13,.62);display:flex;align-items:center;justify-content:center}
+#popup{z-index:30}
+.hidden{display:none!important}
+.pwin{
+  width:min(340px,88%);background:var(--panel);border:3px solid #000;
+  box-shadow:inset 3px 3px 0 #0d0f18,inset -3px -3px 0 #2c3247,0 0 0 3px #3a4058,8px 8px 0 rgba(0,0,0,.45);
+  padding:0 0 12px;
+}
+.ptitle{background:#2b3150;color:var(--gold);padding:7px 12px;font-size:13px;letter-spacing:3px;border-bottom:2px solid #000}
+#ptpl{display:flex;flex-direction:column;padding:12px 12px 4px}
+.pimg{width:100%;border:2px dashed #4a5170;background:#10131c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--dim);font-size:12px;letter-spacing:1px}
+.pimg img{max-width:100%;height:auto;display:block}
+.picon{width:56px;height:56px;image-rendering:pixelated;border:2px solid #000;background:#171a26}
+.pimgnote{margin:8px 0 0;font-size:11px;color:var(--dim);text-align:center;line-height:1.6}
+.plines{font-size:13px;line-height:1.9;color:var(--ink);margin-top:10px}
+#pclose{position:absolute;top:6px;right:10px;cursor:pointer;font-family:monospace;font-size:18px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);line-height:1;padding:2px 4px}
+.fwin{width:min(560px,92%);background:var(--panel);border:3px solid #000;box-shadow:inset 3px 3px 0 #0d0f18,inset -3px -3px 0 #2c3247,0 0 0 3px #3a4058,8px 8px 0 rgba(0,0,0,.45);max-height:86%;display:flex;flex-direction:column}
+#ftext{flex:1;overflow:auto;padding:14px 16px;font-size:13px;line-height:2;white-space:pre-wrap;color:var(--ink)}
+#fclose{margin:10px auto 14px;display:block}
+.ewin{width:min(420px,88%);background:var(--panel);border:3px solid #000;box-shadow:inset 3px 3px 0 #0d0f18,inset -3px -3px 0 #2c3247,0 0 0 3px #3a4058,8px 8px 0 rgba(0,0,0,.45);padding:18px;text-align:center}
+.ewin p{font-size:14px;line-height:2;color:var(--dim);margin:8px 0 18px}
+.ebtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+/* ===== 相册（走过的路 · 收集物回看） ===== */
+.awin{
+  width:min(340px,90%);background:var(--panel);border:3px solid #000;
+  box-shadow:inset 3px 3px 0 #0d0f18,inset -3px -3px 0 #2c3247,0 0 0 3px #3a4058,8px 8px 0 rgba(0,0,0,.45);
+  max-height:84%;overflow-y:auto;padding:0 0 14px;
+}
+.awin .ptitle{display:flex;align-items:center;justify-content:space-between}
+#aclose{cursor:pointer;font-family:monospace;font-size:18px;color:#fff;line-height:1;padding:2px 6px}
+.asec{font-size:11px;color:var(--dim);letter-spacing:2px;margin:14px 12px 6px;font-family:monospace}
+#alist{padding:0 12px;display:flex;flex-direction:column;gap:6px}
+.arow{
+  display:flex;align-items:center;justify-content:space-between;
+  background:#1b1f30;border:2px solid #000;padding:6px 10px;font-size:12px;color:var(--ink);
+}
+.arow.cur{border-color:#b8864f;color:var(--gold)}
+.arow .aname{letter-spacing:1px}
+.arow .astat{font-size:10px;color:var(--dim);font-family:monospace}
+.arow.cur .astat{color:#e8934a}
+#agrid{padding:0 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.acell{
+  background:#1b1f30;border:2px solid #000;padding:8px 4px 6px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  font-size:10px;color:var(--ink);font-family:inherit;text-align:center;
+}
+.acell canvas{width:44px;height:44px;image-rendering:pixelated}
+.acell:hover{border-color:#3a4058}
+.acell.miss{opacity:.38;cursor:default}
+.acell.miss:hover{border-color:#000}
+#afull{display:block;margin:14px auto 0;padding:4px 14px}
+
+/* 电脑端不重点适配：居中一个手机宽度的框即可 */
+@media (min-width:640px){
+  body{display:flex;align-items:center;justify-content:center;background:#0b0d13;}
+  #screen{width:min(420px,100vw);height:100vh;height:100dvh;box-shadow:0 0 0 2px #2c3247,0 0 60px rgba(0,0,0,.55);}
+}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="screen">
+  <div id="canvaswrap">
+    <canvas id="scene" width="480" height="288"></canvas>
+    <div id="scanlines"></div>
+    <div id="hud">
+      <div id="station">第1站</div>
+      <div id="hudright">
+        <button id="btnAlbum" class="pxbtn" type="button">相册</button>
+        <button id="btnMute" class="pxbtn" type="button" aria-label="声音开关">
+          <svg id="icoOn" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 6v4h3l4 3V3L5 6H2z"/><path d="M11 5.5a3 3 0 0 1 0 5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+          <svg id="icoOff" class="hidden" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 6v4h3l4 3V3L5 6H2z"/><line x1="10" y1="5" x2="14" y2="11" stroke="currentColor" stroke-width="1.6"/><line x1="14" y1="5" x2="10" y2="11" stroke="currentColor" stroke-width="1.6"/></svg>
+        </button>
+      </div>
+      <!-- 音量控制面板 -->
+      <div id="volumePanel" style="position:absolute;top:50px;right:10px;background:#fff;border:2px solid #3a2d22;border-radius:8px;padding:10px;z-index:100;display:none;min-width:150px;">
+        <div style="font-family:monospace;font-size:12px;color:#3a2d22;margin-bottom:8px;">音量设置</div>
+        <div style="margin-bottom:8px;">
+          <div style="font-family:monospace;font-size:10px;color:#666;margin-bottom:4px;">音效</div>
+          <input type="range" id="sfxVolume" min="0" max="100" value="50" style="width:100%;">
+        </div>
+        <div>
+          <div style="font-family:monospace;font-size:10px;color:#666;margin-bottom:4px;">音乐</div>
+          <input type="range" id="musicVolume" min="0" max="100" value="30" style="width:100%;">
+        </div>
+      </div>
+    </div>
+    <div id="catbubble"></div>
+    <div id="bingo">BINGO!</div>
+    <div id="wayarrow">
+      <div class="fish-head"></div>
+      <div class="fish-bone"></div>
+      <div class="fish-rib r1"></div>
+      <div class="fish-rib r2"></div>
+      <div class="fish-rib r3"></div>
+    </div>
+    <!-- ===== 顶部记忆提示条 ===== -->
+    <div id="scenehint" class="hidden"></div>
+    <!-- ===== 触屏十字键（手机端） ===== -->
+    <div id="dpad">
+      <button id="dp-up" class="dbtn" type="button" aria-label="上"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3 L3 9 L13 9 Z" fill="currentColor"/></svg></button>
+      <button id="dp-left" class="dbtn" type="button" aria-label="左"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8 L9 3 L9 13 Z" fill="currentColor"/></svg></button>
+      <button id="dp-right" class="dbtn" type="button" aria-label="右"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8 L7 3 L7 13 Z" fill="currentColor"/></svg></button>
+      <button id="dp-down" class="dbtn" type="button" aria-label="下"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13 L3 7 L13 7 Z" fill="currentColor"/></svg></button>
+    </div>
+    <!-- ===== 记忆弹窗（内容由模板渲染，结构可变） ===== -->
+    <div id="popup" class="overlay hidden">
+      <div class="pwin" style="position:relative;">
+        <div class="ptitle">▌ <span></span></div>
+        <div id="ptpl"></div>
+        <span id="pclose">×</span>
+      </div>
+    </div>
+    <!-- ===== 完整信件 ===== -->
+    <div id="fullletter" class="overlay hidden">
+      <div class="fwin">
+        <div class="ptitle">▌ 完整的一封信</div>
+        <div id="ftext"></div>
+        <button id="fclose" class="pxbtn" type="button">[ 关闭 ]</button>
+      </div>
+    </div>
+    <!-- ===== 结尾 ===== -->
+    <div id="ending" class="overlay hidden">
+      <div class="ewin" style="max-width: 400px;">
+        <div class="ptitle" style="text-align:center">▌ 信，读完了</div>
+        <video id="end_video" src="assets/maps/map_end.mp4" style="width:100%; border-radius:8px; margin: 12px 0;" loop playsinline></video>
+        <p>也许你忘了的，我还记得。</p>
+        <div class="ebtns">
+          <button id="eLetter" class="pxbtn" type="button">再看一遍完整的信</button>
+          <button id="eAgain" class="pxbtn" type="button">回到开头</button>
+        </div>
+      </div>
+    </div>
+    <!-- ===== 相册（走过的路 · 收集物回看） ===== -->
+    <div id="album" class="overlay hidden">
+      <div class="awin">
+        <div class="ptitle"><span>▌ 相册 · 走过的路</span><span id="aclose">×</span></div>
+        <!-- 两个 tab -->
+        <div style="display:flex;gap:8px;padding:8px 12px;">
+          <button id="tabExplore" class="pxbtn" type="button" style="flex:1;">可探索</button>
+          <button id="tabDialog" class="pxbtn" type="button" style="flex:1;">对白</button>
+        </div>
+        <!-- 可探索 tab 内容 -->
+        <div id="tabExploreContent">
+          <div class="asec">· 站</div>
+          <div id="alist"></div>
+          <div class="asec">· 收集的小玩意儿</div>
+          <div id="agrid"></div>
+        </div>
+        <!-- 对白 tab 内容 -->
+        <div id="tabDialogContent" style="display:none;">
+          <div id="dlist" style="padding:12px;display:flex;flex-direction:column;gap:12px;"></div>
+        </div>
+        <button id="afull" class="pxbtn" type="button">完整的一封信</button>
+      </div>
+    </div>
+    <!-- ===== 热区对白弹窗（白底小气泡，固定画面居中，最多两行） ===== -->
+    <div id="hotspotpop" style="display:none;position:absolute;z-index:40;width:min(86%,360px);">
+      <div id="hsinner" style="background:#fff;border:2px solid #3a2d22;border-radius:8px;padding:14px 16px 12px;box-shadow:0 4px 0 rgba(0,0,0,.2),3px 3px 0 rgba(0,0,0,.25);position:relative;">
+        <span id="hsclose" style="position:absolute;top:5px;right:8px;cursor:pointer;font-family:monospace;color:#3a2d22;font-size:15px;line-height:1;padding:2px;">×</span>
+        <div id="hstext" style="font-family:monospace;color:#2b2b3d;font-size:13px;line-height:1.7;"></div>
+        <img id="hsphoto" style="display:none;margin-top:8px;width:100%;border:4px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2);" />
+      </div>
+      <div id="hsarrow" style="position:absolute;width:0;height:0;border:7px solid transparent;"></div>
+    </div>
+  </div>
+  <!-- ===== 图片路径清单（供发布链路扫描上传，视觉不可见，勿删） ===== -->
+  <div style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
+    <img src="assets/maps/map_classroom.png" alt="">
+    <img src="assets/maps/map_classroom_dusk.png" alt="">
+    <img src="assets/maps/map_rice.png" alt="">
+    <img src="assets/maps/map_final.png" alt="">
+    <img src="assets/maps/test_A_train.png" alt="">
+    <img src="assets/maps/test_B_building.png" alt="">
+    <img src="assets/maps/test_C_sakura.png" alt="">
+    <img src="assets/characters/player_cat.png" alt="">
+    <img src="assets/memory-objects/memory_peach.jpg" alt="">
+    <img src="assets/memory-content/memory_peach.jpg" alt="">
+    <img src="assets/memory-content/memory_chat_01.png" alt="">
+    <img src="assets/memory-content/memory_diary_01.png" alt="">
+    <img src="assets/memory-content/player_voice_01.jpg" alt="">
+    <img src="assets/memory-content/memory_textbook_01.jpg" alt="">
+    <img src="assets/memory-objects/gift_box.png" alt="">
+    <img src="assets/memory-content/memory_baoji_station.jpg" alt="">
+    <img src="assets/memory-content/memory_sunset_01.jpg" alt="">
+    <img src="assets/memory-content/memory_sunset_02.jpg" alt="">
+    <img src="assets/memory-content/memory_signature_01.jpg" alt="">
+    <img src="assets/memory-content/memory_signature_02.jpg" alt="">
+    <img src="assets/memory-content/memory_train_junior.jpg" alt="">
+    <img src="assets/memory-content/memory_train_senior.jpg" alt="">
+    <img src="assets/memory-content/memory_sakura_girl_01.png" alt="">
+    <img src="assets/memory-content/memory_sakura_bag_01.jpg" alt="">
+    <img src="assets/memory-content/memory_sakura_card_01.jpg" alt="">
+    <img src="assets/memory-content/memory_gift_balloon_01.png" alt="">
+    <img src="assets/memory-content/memory_gift_balloon_02.png" alt="">
+    <img src="assets/memory-content/memory_gift_balloon_03.png" alt="">
+    <img src="assets/memory-content/memory_rain_umbrella.jpg" alt="">
+    <img src="assets/memory-content/memory_rain_letter.jpg" alt="">
+    <img src="assets/memory-content/memory_rice_note.jpg" alt="">
+    <img src="assets/memory-content/memory_bar_note.jpg" alt="">
+    <img src="assets/memory-content/memory_bar_phone.jpg" alt="">
+    <img src="assets/memory-objects/gift_box_fixed.png" alt="">
+    <img src="assets/memory-content/memory_sakura_ground_01.jpg" alt="">
+    <img src="assets/memory-content/memory_sakura_tree_01.jpg" alt="">
+    <img src="assets/memory-content/memory_sakura_tree_02.jpg" alt="">
+    <img src="assets/memory-content/memory_sakura_building.jpg" alt="">
+    <img src="assets/memory-content/memory_sunset_02_01.jpg" alt="">
+    <img src="assets/memory-content/photo_panda.jpg" alt="">
+    <img src="assets/memory-content/photo_group.jpg" alt="">
+    <video id="bg_video_map_rain" src="assets/maps/map_rain.mp4" loop autoplay playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:-1;"></video>
+    <video id="bg_video_map_escape" src="assets/maps/map_escape.mp4" loop autoplay playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:-1;"></video>
+  </div>
+  <!-- ===== 开场引导遮罩 ===== -->
+  <div id="startoverlay" style="position:absolute;inset:0;z-index:100;background:rgba(40,30,20,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;">
+    <div style="font-family:monospace;color:#faf3e3;font-size:18px;letter-spacing:2px;text-align:center;line-height:2;">这是一封可以走进去的信<br><br>点击开始</div>
+    <div style="margin-top:16px;font-size:24px;color:#faf3e3;animation:blink 1s steps(2) infinite;">▼</div>
+  </div>
+  <!-- ===== 底部信件对话框 ===== -->
+  <div id="dialogue">
+    <div class="dinner">
+      <div id="dtext"></div>
+      <div id="dbar"><div id="dbarfill"></div></div>
+      <div id="dprev" title="上一句">▲</div>
+      <div id="dnext">▼</div>
+      <div id="controls">继续：点击 ｜ 移动：WASD / 十字键</div>
+    </div>
+  </div>
+</div>
+<script>
+/* ============================================================
+   一封可以走进去的信 · v3（重构版）
+   ------------------------------------------------------------
+   结构规则：
+   1. 所有内容（信件 / 记忆 / 场景）集中在 CONTENT 对象，改数据不改代码。
+   2. 逻辑层只通过 Assets 语义 ID 取素材，绝不写死文件名；缺素材自动回退程序化占位。
+   3. 每张图片素材，除了在 Assets 注册，必须在上面隐藏 <img> 清单里也写一行，
+      否则发布链路上传不到，线上版一定裂图。
+   4. 同一个热区只能有一个触发入口。
+   5. 预留扩展（现在不实现）：动态背景效果层（雨 / 飘花 / 代码雨）、更多弹窗模板、
+      音效音乐（AudioManager 已留插槽）、场景过渡动画。
+   ============================================================ */
+/* ============================================================
+   CONTENT：全部内容（信件 / 记忆 / 场景）。改数据只改这里，不动代码。
+   letter   → 信件：完整原文 + 分段（每段 1~3 句；pauseAt 暂停等热区，scene 切换场景，memory 触发记忆）
+   memories → 记忆：content(是什么) / presentation(长什么样，模板) / trigger(怎么触发)
+   scenes   → 地图：visual(整图素材) + data(碰撞网格 / 出生点 / 触发区 / 画面热区)
+   模块代码通过 var LETTER / MEMORIES / SCENES 引用本对象。
+   ============================================================ */
+var CONTENT = {
+
+  /* ---------- letter：信件 ---------- */
+  letter: {
+    title: "一封可以走进去的信",
+    to: "To 杨女士",
+    /* 完整原文（一字不改，右上角「信」按钮可整篇阅读） */
+    fullText: `亲爱的朋友，也许长大后生日变得不再那样值得期待，但我想那也许意味着——每一天都值得期待。
+
+我们不再需要一个特殊的日子才能庆祝。所以准备好了吗？我来带你看看我们还记得些什么。
+
+那天我问你，我们第一次见面说的话是什么，你还记得吗？
+
+其实我也不记得了。
+
+但我记得你第一次，是在初一的语文课上。那个时候你刚转学来，印象中穿着蓝色的牛仔裙衫，下面是条红棕色的铅笔裤？
+
+还是说我只留了那张照片，所以对你的回忆停在了那个地方。
+
+那天，课文朗诵朗读的环节，你的角色是羚羊木雕里万芳的妈妈，我是万芳。小时候心里别别扭扭的，隔了很久也记得这种感觉。
+
+后来我们坐对桌，吵吵闹闹，总因为小事偷偷别扭。嗯...小时候还在交换日记里偷偷骂你【大小姐脾气】，但其实很欣赏你敢怒敢言的勇气吧，毕竟自己那时候是个软蛋。
+
+再后来我们同桌，你说：因为一句话我们冷战了很久很久。我一丁点儿印象也没有，但还好，到底是天天见的，最终还是和好了。
+
+后来我们到了新的学校，并没有在一个班。我想幸好没有在一个班，不然以当时的脾气，闹起别扭来怕是要冷战一辈子。
+
+也许是恰到好处的距离，我们反而变得亲近。
+
+但什么时候真正意识到，原来我们是那样好的朋友呢？
+
+我想大概是某天回家，另一个朋友S跟我说，因为你给我塞了个桃子，你很开心的去和她炫耀。
+
+我想或许你早已忘记，但我记得。那个时候我拥有的空间不大，但哪里都能找到你零碎的影子：糖果、卡片、小纸条、贴纸、水果，乱七八糟的。那个时候我想，如果“爱”人是一种天分，那你一定是个天才。到处都是你的影子。
+
+后面呢，我们总是在午休后一起去教室。我们在顶楼，你在二楼的里侧，我总是会早到些。于是每天看到你蹦蹦跳跳地跑来，拿起一些小玩意儿塞给我。后来你说“以后不会让你等我太久”，我还是会吐槽【磨叽！】，但那样的日子竟然也觉得是让人怀念的。
+
+再后来呢，我还记得有天下雨，忘记带伞，和你一同撑伞回去。第二天你说 下雨天幸好我带了伞，让你没有被淋湿，这是你觉得很幸福的这件事情。那张小卡在很久的时间里也同样让我觉得幸福的。
+
+我想：我同样因为你明白了：人并非不能爱人，人们只是太期待得到爱，从而在爱与被爱里进退两难。
+
+但你向来大胆，对你喜欢的从来都是尽全力争取，也从不担心落空。正大光明的给世界你的爱，也正大光明的受伤，然后站起来继续往前走。
+
+哪怕至今我也不懂这个字意味着什么，但我想我从你身上得到的爱，让我对世界变得挑剔，却也忘记了。你总是勇敢的决定让任何人该出现在你生命的哪个位置，然后像苏格拉底的稻穗一样，闭上眼睛穿过整个稻田。
+
+我想我总有一种幻觉：逃离熟悉的一切，从头开始，这像对另一种安全的渴望，像是更强大、更自洽、更游刃有余、更平和，然后才能建立起良好的关系。
+
+在一个全新的副本里，没有人认识曾经的我。那个我有什么好的呢？她有那么多缺点，她什么都不会，她根本没有成长起来。
+
+可是好像成为你的朋友的时候，我就是不够好的。
+
+所以人不是因为完美才被爱的。我们接纳的或许就是那个不够好的，有很多缺点，但依然值得被好好对待的彼此吧。
+
+但是，美丽的杨女士，我们或许过了那个把“爱”与“思念”挂在口上的年纪。
+
+但我仍然要将爱从爱情的字典里拯救出来。
+
+当我说：“你是我的好朋友时”。
+
+我想说的是：我爱你。
+
+并且我会一直爱你。
+
+礼物没什么惊喜的，但希望它能替我陪着你。
+
+另外呢，如果有一天你忘记了你曾经多么勇敢，教会别人爱、自信与勇气。
+
+我想...
+
+你可以从我这里取走一些。
+
+也许你忘了的，我还记得。`,
+
+    /* 分段：每段 1~3 句，点击文字区推进。
+       pauseAt → 读到时暂停，等玩家点对应热区；scene → 换背景图和画布比例；memory → 触发记忆。 */
+    segments: [
+      { id: "s01", text: "亲爱的朋友，也许长大后生日变得不再那样值得期待，但我想那也许意味着——每一天都值得期待。", memory: "memory_voice_01" },
+      { id: "s02", text: "我们不再需要一个特殊的日子才能庆祝。所以准备好了吗？我来带你看看我们还记得些什么。" },
+      { id: "s03", text: "那天我问你，我们第一次见面说的话是什么，你还记得吗？", memory: "memory_chat_01" },
+      { id: "s04", text: "其实我也不记得了。" },
+      { id: "s05", text: "但我记得你第一次，是在初一的语文课上。那个时候你刚转学来，印象中穿着蓝色的牛仔裙衫，下面是条红棕色的铅笔裤？", pauseAt: "blackboard" },
+      { id: "s06", text: "还是说我只留了那张照片，所以对你的回忆停在了那个地方。", pauseAt: "photo" },
+      { id: "s07", text: "那天，课文朗诵朗读的环节，你的角色是羚羊木雕里万芳的妈妈，我是万芳。小时候心里别别扭扭的，隔了很久也记得这种感觉。", memory: "memory_textbook" },
+      { id: "s08", text: "后来我们坐对桌，吵吵闹闹，总因为小事偷偷别扭。嗯...小时候还在交换日记里偷偷骂你【大小姐脾气】，但其实很欣赏你敢怒敢言的勇气吧，毕竟自己那时候是个软蛋。", memory: "memory_diary" },
+      { id: "s09", text: "再后来我们同桌，你说：因为一句话我们冷战了很久很久。我一丁点儿印象也没有，但还好，到底是天天见的，最终还是和好了。" },
+      { id: "s10", text: "后来我们到了新的学校，并没有在一个班。我想幸好没有在一个班，不然以当时的脾气，闹起别扭来怕是要冷战一辈子。", scene: { asset: "map_classroom_dusk", aspect: "5/3" } },
+      { id: "s11", text: "也许是恰到好处的距离，我们反而变得亲近。" },
+      { id: "s12", text: "但什么时候真正意识到，原来我们是那样好的朋友呢？", scene: { asset: "map_train", aspect: "4/5" } },
+      { id: "s13", text: "我想大概是某天回家，另一个朋友S跟我说，因为你给我塞了个桃子，你很开心的去和她炫耀。", memory: "memory_peach" },
+      { id: "s14", text: "我想或许你早已忘记，但我记得。那个时候我拥有的空间不大，但哪里都能找到你零碎的影子：糖果、卡片、小纸条、贴纸、水果，乱七八糟的。", memory: "memory_gift", scene: { asset: "map_building", aspect: "3/4" } },
+      { id: "s15", text: "那个时候我想，如果“爱”人是一种天分，那你一定是个天才。到处都是你的影子。" },
+      { id: "s16", text: "后面呢，我们总是在午休后一起去教室。我们在顶楼，你在二楼的里侧，我总是会早到些。", scene: { asset: "map_building", aspect: "3/4" } },
+      { id: "s17", text: "于是每天看到你蹦蹦跳跳地跑来，拿起一些小玩意儿塞给我。后来你说“以后不会让你等我太久”，我还是会吐槽【磨叽！】，但那样的日子竟然也觉得是让人怀念的。", scene: { asset: "map_sakura", aspect: "1/1" } },
+      { id: "s18", text: "再后来呢，我还记得有天下雨，忘记带伞，和你一同撑伞回去。第二天你说 下雨天幸好我带了伞，让你没有被淋湿，这是你觉得很幸福的这件事情。", scene: { asset: "map_rain", aspect: "3/4" } },
+      { id: "s19", text: "那张小卡在很久的时间里也同样让我觉得幸福的。", scene: { asset: "map_rain", aspect: "3/4" } },
+      { id: "s20", text: "我想：我同样因为你明白了：人并非不能爱人，人们只是太期待得到爱，从而在爱与被爱里进退两难。", scene: { asset: "map_rice", aspect: "3/4" } },
+      { id: "s21", text: "但你向来大胆，对你喜欢的从来都是尽全力争取，也从不担心落空。正大光明的给世界你的爱，也正大光明的受伤，然后站起来继续往前走。", scene: { asset: "map_rice", aspect: "3/4" } },
+      { id: "s22", text: "哪怕至今我也不懂这个字意味着什么，但我想我从你身上得到的爱，让我对世界变得挑剔，却也忘记了。你总是勇敢的决定让任何人该出现在你生命的哪个位置，然后像苏格拉底的稻穗一样，闭上眼睛穿过整个稻田。", scene: { asset: "map_rice", aspect: "3/4" } },
+      { id: "s23", text: "我想我总有一种幻觉：逃离熟悉的一切，从头开始，这像对另一种安全的渴望，像是更强大、更自洽、更游刃有余、更平和，然后才能建立起良好的关系。", scene: { asset: "map_escape", aspect: "3/4" } },
+      { id: "s24", text: "在一个全新的副本里，没有人认识曾经的我。那个我有什么好的呢？她有那么多缺点，她什么都不会，她根本没有成长起来。", scene: { asset: "map_escape", aspect: "3/4" } },
+      { id: "s25", text: "可是好像成为你的朋友的时候，我就是不够好的。", scene: { asset: "map_escape", aspect: "3/4" } },
+      { id: "s26", text: "所以人不是因为完美才被爱的。我们接纳的或许就是那个不够好的，有很多缺点，但依然值得被好好对待的彼此吧。", scene: { asset: "map_escape", aspect: "3/4" } },
+      { id: "s27", text: "但是，美丽的杨女士，我们或许过了那个把“爱”与“思念”挂在口上的年纪。", scene: { asset: "map_final", aspect: "3/4" } },
+      { id: "s28", text: "但我仍然要将爱从爱情的字典里拯救出来。当我说：“你是我的好朋友时”。", scene: { asset: "map_final", aspect: "3/4" }, memory: "memory_bar_phone" },
+      { id: "s29", text: "我想说的是：我爱你。并且我会一直爱你。", scene: { asset: "map_final", aspect: "3/4" } },
+      { id: "s30", text: "礼物没什么惊喜的，但希望它能替我陪着你。", scene: { asset: "map_final", aspect: "3/4" } },
+      { id: "s31", text: "另外呢，如果有一天你忘记了你曾经多么勇敢，教会别人爱、自信与勇气。", scene: { asset: "map_final", aspect: "3/4" } },
+      { id: "s32", text: "我想...", scene: { asset: "map_final", aspect: "3/4" } },
+      { id: "s33", text: "你可以从我这里取走一些。", scene: { asset: "map_final", aspect: "3/4" } },
+      { id: "s34", text: "也许你忘了的，我还记得。", scene: { asset: "map_final", aspect: "3/4" } }
+    ]
+  },
+
+  /* ---------- memories：记忆 ---------- */
+  memories: {
+    /* 开场语音播放器：s01 段直接弹出（不掉落物） */
+    memory_voice_01: {
+      id: "memory_voice_01",
+      content: {
+        title: "生日快乐！",
+        lines: ["人，泥嚎，我系招财啦，（骗你的，其实我是杨掌柜）。"],
+        images: ["player_voice_01"],
+        audio: "assets/audio/voice_02.mp3"
+      },
+      presentation: {
+        template: "player"
+      },
+      trigger: {
+        type: "direct"
+      }
+    },
+    /* 黑板记忆：教室热区，点击弹窗 */
+    memory_blackboard: {
+      id: "memory_blackboard",
+      content: {
+        title: "黑板",
+        lines: ["那年杏花微雨，你说你是咪郡王，（刷新一位新人类）。"],
+        images: [],
+        video: "assets/memory-content/memory_blackboard_video.mp4"
+      },
+      presentation: {
+        template: "pink",
+        icon: "blackboard",
+        hintText: "看看黑板上还留着什么..."
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 课本记忆：场景触发（地图上的 triggerZone 发光），模板 default */
+    memory_textbook: {
+      id: "memory_textbook",
+      content: {
+        title: "《羚羊木雕》",
+        lines: ["啃苹果（嚼嚼嚼）"],
+        images: ["memory_textbook_01"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "book",
+        assetId: "memory_textbook",
+        hintText: "你还记得这个吗？"
+      },
+      trigger: {
+        type: "scene",
+        zone: "textbook"
+      }
+    },
+    /* 课桌：教室热区（占位，后面填内容） */
+    memory_desk: {
+      id: "memory_desk",
+      content: {
+        title: "课桌",
+        lines: ["【课桌对白占位】"],
+        images: []
+      },
+      presentation: {
+        template: "pink",
+        icon: "desk",
+        hintText: "【课桌提示占位】"
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 右边窗子：教室热区（占位，后面填内容） */
+    memory_window_right: {
+      id: "memory_window_right",
+      content: {
+        title: "窗子",
+        lines: ["【右边窗子对白占位】"],
+        images: []
+      },
+      presentation: {
+        template: "pink",
+        icon: "window",
+        hintText: "【右边窗子提示占位】"
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 太阳/晚霞：教学楼热区（占位） */
+    memory_sunset: {
+      id: "memory_sunset",
+      content: {
+        title: "晚霞",
+        lines: ["咪的眼睛总是被窗外的光晃到，细看才发现那是咪追求一生的自由！"],
+        images: ["memory_sunset_01", "memory_sunset_02"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "sun",
+        hintText: "【太阳/晚霞提示占位】"
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 太阳/晚霞：教学楼热区（占位） */
+    memory_sunset_02: {
+      id: "memory_sunset_02",
+      content: {
+        title: "教学楼的夕阳",
+        lines: ["咪知天高任鸟飞，也知话说三遍淡如水。"],
+        images: ["memory_sunset_02"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "sun",
+        hintText: "【太阳/晚霞提示占位】"
+      }
+    },
+    /* 跑操：教学楼热区（占位） */
+    memory_running: {
+      id: "memory_running",
+      content: {
+        title: "跑操",
+        lines: ["满脑子的智慧，硬生生撑大了咪的脸。"],
+        images: [],
+        video: "assets/memory-content/memory_running_video.mp4"
+      },
+      presentation: {
+        template: "pink",
+        icon: "run",
+        hintText: "【跑操提示占位】"
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 桃子记忆：掉落触发（物件从上方掉下，落地闪烁，点击弹窗），模板 default */
+    memory_peach: {
+      id: "memory_peach",
+      content: {
+        title: "桃子",
+        lines: ["咪不吃肉，不然全世界就把咪吃掉。  ——《素咪者》："],
+        images: ["memory_content_peach_01"]
+      },
+      presentation: {
+        template: "default",
+        icon: "peach",
+        assetId: "memory_peach",
+        hintText: "要不要看看？",
+        barText: "▸ 一颗桃子从信里掉了出来",
+        placeholderNote: "PLACEHOLDER：这里放一张桃子 / 那时候的照片"
+      },
+      trigger: {
+        type: "drop",
+        at: 0.5
+      }
+    },
+    /* 聊天记录记忆：掉落触发，点开看图片内容（微信聊天截图，素材后续提供，现在占位） */
+    memory_chat_01: {
+      id: "memory_chat_01",
+      content: {
+        title: "第一句话",
+        lines: ["我菠萝吹咪本可以浪迹天涯，直到遇见你梨花咪。"],
+        images: ["memory_chat_01"]
+      },
+      presentation: {
+        template: "pink",        // 粉色照片卡片：图片 + 文字
+        icon: "chat",
+        assetId: "memory_chat_01",
+        hintText: "好像掉出了聊天记录…",
+        barText: "▸ 一张聊天截图从信里掉了出来"
+      },
+      trigger: {
+        type: "drop",
+        at: 0.4
+      }
+    },
+    /* 日记截图记忆：掉落型，粉色卡片显示手写日记 */
+    memory_diary: {
+      id: "memory_diary",
+      content: {
+        title: "交换日记",
+        lines: ["要是咪咪都懂咪，那咪岂不是太普通了。"],
+        images: ["memory_diary_01"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "diary",
+        assetId: "memory_diary_01",
+        hintText: "好像掉出了一本小日记…"
+      },
+      trigger: {
+        type: "drop",
+        at: 0.5
+      }
+    },
+    /* 礼物盒：开盒动画 + 散落小卡 */
+    memory_gift: {
+      id: "memory_gift",
+      content: {
+        title: "气球卡片",
+        lines: ["我李咪遥发誓，从此不会让你一只咪孤苦伶仃。"],
+        images: ["memory_gift_balloon_01", "memory_gift_balloon_02", "memory_gift_balloon_03"]
+      },
+      presentation: {
+        template: "gift",
+        icon: "gift",
+        hintText: "好像掉了个礼物盒…打开看看！"
+      },
+      trigger: {
+        type: "drop",
+        at: 0.5
+      }
+    },
+    /* 宝鸡南站：列车场景可选探索 */
+    memory_baoji_station: {
+      id: "memory_baoji_station",
+      content: {
+        title: "宝鸡南站",
+        lines: ["那咪呢，是想名扬天下，还是与我隐居山林。"],
+        images: ["memory_baoji_station"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "station",
+        hintText: "那个时候我们常常要坐 13 分钟的高铁..."
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 签名：黄昏教室靠前课桌 */
+    memory_signature: {
+      id: "memory_signature",
+      content: {
+        title: "签名",
+        lines: ["咪的爪子太小了，握不住的太多了。"],
+        images: ["memory_signature_01", "memory_signature_02"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "signature",
+        hintText: "那一年的我们，在课桌上写下了彼此的名字。"
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 列车显示屏：初中/高中照片 */
+    memory_train_display: {
+      id: "memory_train_display",
+      content: {
+        title: "列车显示屏",
+        lines: ["等你读懂咪的隐喻，咪早就死了。"],
+        images: ["memory_train_junior", "memory_train_senior"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "train",
+        hintText: "那个时候我们常常要坐 13 分钟的高铁..."
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 下雨环节：透明伞 + 弹窗 */
+    memory_rain: {
+      id: "memory_rain",
+      content: {
+        title: "雨天",
+        lines: ["咪的世界里什么时候下小鱼？！"],
+        images: ["memory_rain_umbrella"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "rain",
+        hintText: "下雨天幸好我带了伞，让你没有被淋湿。"
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 下雨的信（自动弹出） */
+    memory_rain_letter: {
+      id: "memory_rain_letter",
+      content: {
+        title: "那封信",
+        lines: ["（自动弹出，可擦掉）"],
+        images: ["memory_rain_letter"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "letter",
+        hintText: ""
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 樱花树：樱花场景可选探索 */
+    memory_sakura_tree: {
+      id: "memory_sakura_tree",
+      content: {
+        title: "樱花树",
+        lines: ["这个生而为猫 果咩纳塞 ^>⩊<^੭⑅"],
+        images: ["memory_sakura_tree_01", "memory_sakura_tree_02"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "sakura",
+        hintText: "学校的樱花开时总是很漂亮呢..."
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 樱花卡片：樱花场景可选探索 */
+    memory_sakura_card: {
+      id: "memory_sakura_card",
+      content: {
+        title: "宿舍楼的银杏",
+        lines: ["这是我当时捡的一朵樱花...算上去也快十一年了。"],
+        images: ["memory_sakura_card_01"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "sakura",
+        hintText: "好像掉了片花瓣...来看看"
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 樱花书包（黑书包）：樱花场景可选探索 */
+    memory_sakura_bag: {
+      id: "memory_sakura_bag",
+      content: {
+        title: "留言板",
+        lines: ["人 do you love 咪？"],
+        images: ["memory_sakura_bag_01"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "bag",
+        hintText: "以后不会让你等太久的..."
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 樱花红书包女孩：樱花场景可选探索 */
+    memory_sakura_girl: {
+      id: "memory_sakura_girl",
+      content: {
+        title: "没想好起什么",
+        lines: ["可爱本来就是咪的防身术，对吧，丧彪？"],
+        images: ["memory_sakura_girl_01"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "girl",
+        hintText: "你总是蹦蹦跳跳地跑来..."
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 樱花地上花瓣：樱花场景可选探索 */
+    memory_sakura_ground: {
+      id: "memory_sakura_ground",
+      content: {
+        title: "花瓣",
+        lines: ["咪命令你马上把脸转过来，让咪踩一下。"],
+        images: ["memory_sakura_ground_01"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "petal",
+        hintText: ["地上落满了花瓣..."]
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 右边教学楼：樱花场景可选探索 */
+    memory_sakura_building: {
+      id: "memory_sakura_building",
+      content: {
+        title: "银杏",
+        lines: ["世界下起猫猫雨。"],
+        images: ["memory_sakura_building"]
+      },
+      presentation: {
+        template: "pink",
+        icon: "tree",
+        hintText: "【教学楼银杏叶提示占位】"
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 稻田便签：稻田场景必点掉落物 */
+    memory_rice_note: {
+      id: "memory_rice_note",
+      content: {
+        title: "稻穗便签",
+        lines: ["是单送我一个咪的，还是别的咪都有。  ——《咪楼梦》"],
+        images: ["memory_rice_note"]
+      },
+      presentation: {
+        template: "default",
+        icon: "rice",
+        hintText: "好像掉了个稻穗...捡起来看看！",
+        barText: "▸ 一颗稻穗从信里掉了出来"
+      },
+      trigger: {
+        type: "drop",
+        at: 0.5
+      }
+    },
+    /* 酒吧便签：酒吧场景可选探索 */
+    memory_bar_note: {
+      id: "memory_bar_note",
+      content: {
+        title: "便签",
+        lines: ["咪想早醒一个罐头，晚睡一个罐头。"],
+        images: ["memory_bar_note"]
+      },
+      presentation: {
+        template: "default",
+        icon: "note",
+        hintText: "要不要看看？"
+      },
+      trigger: {
+        type: "scene",
+        at: 0.5
+      }
+    },
+    /* 酒吧旧手机：酒吧场景必点掉落物 */
+    memory_bar_phone: {
+      id: "memory_bar_phone",
+      content: {
+        title: "旧手机",
+        lines: ["你在此地不要走动，咪去买几个橘子 ——《咪的背影》"],
+        images: ["memory_bar_phone"]
+      },
+      presentation: {
+        template: "default",
+        icon: "phone",
+        hintText: "好像掉了个旧手机...捡起来看看！",
+        barText: "▸ 一部旧旧的手机从信里掉了出来"
+      },
+      trigger: {
+        type: "drop",
+        at: 0.5
+      }
+    },
+    /* 照片记忆：粉色照片卡片（可切图），模板 pink，右上角小叉 */
+    memory_photo: {
+      id: "memory_photo",
+      content: {
+        title: "那张照片",
+        lines: ["咪和咪的缘分，是一场不出门就能避开的雨。"],
+        images: ["photo_panda", "photo_group"],
+        audio: "assets/audio/voice_classroom.mp3"
+      },
+      presentation: {
+        template: "pink",
+        icon: "book",
+        placeholderNote: "PLACEHOLDER：这里放那张照片"
+      }
+    }
+  },
+
+  /* ---------- scenes：场景 ---------- */
+  scenes: {
+    classroom: {
+      id: "map_classroom",
+      name: "教室",
+      visual: {
+        assetId: "map_classroom",   // assets/maps/map_classroom.png；没有就画程序化瓦片
+        tileW: 16, tileH: 16,
+        gridW: 30, gridH: 18
+      },
+      data: {
+        /* 碰撞网格（同时是程序化兜底渲染的依据）。图例：# 墙  . 地板  B 黑板  W 窗户  D 课桌  T 放课本的课桌 */
+        grid: [
+          "####WWWW##############WWWW####",
+          "#..........BBBBBBBB...........#",
+          "#.............................#",
+          "#.............................#",
+          "#....DD...........DD.........#",
+          "#....DD...........DD.........#",
+          "W.............................#",
+          "W.............................#",
+          "#....DD...........DD.........#",
+          "#....DD...........DD.........#",
+          "#.............................W",
+          "#.............................W",
+          "#..........TT...........DD...#",
+          "#..........TT...........DD...#",
+          "#.............................#",
+          "#.............................#",
+          "#.............................#",
+          "##############################"
+        ],
+        solid: ["#", "B", "D", "T", "W"],
+        spawn: { x: 5, y: 13 },
+        /* 可点击触发区（瓦片坐标，独立数据层）：以后加记忆物件，在这里登记即可 */
+        triggerZones: [
+          { id: "textbook", x: 11, y: 12, w: 2, h: 2, label: "放课本的课桌" }
+        ],
+        /* ============================================================
+         * 热区分三种类型（按类型分组，方便后面逐个校验修改）
+         * ============================================================
+         * 类型 1：纯对白（无 memory）
+         *   - 不画闪光点
+         *   - 小猫靠近自动弹出对白气泡
+         *   - 不影响剧情推进
+         *   - 只需要填：位置 + 对白文字
+         *
+         * 类型 2：可选探索（有 memory）
+         *   - 画闪光点
+         *   - 可点可不点，不影响剧情推进
+         *   - 点了弹出粉色弹窗看照片
+         *   - 需要填：位置 + 对白文字 + 对应的图片
+         *
+         * 类型 3：必点（掉落物，不在这个数组里）
+         *   - 从上面掉下来
+         *   - 必须点完才能推进到下一句
+         *   - 影响剧情
+         *   - 例子：桃子、聊天记录、日记本、礼物盒
+         * ============================================================ */
+        hotspots: [
+
+          /* ---------- 类型 1：纯对白（无 memory，小猫靠近自动弹） ---------- */
+          /* 教室（map_classroom） */
+          { id: "window_left_class", x: 40, y: 80, w: 60, h: 120,
+            dialog: "你看，外面的世界一直在动。教室里的时间好像走得特别慢。",
+            autoDialog: "你看，外面的世界一直在动。",
+            autoDialog2: "教室里的时间好像走得特别慢。",
+            scene: "map_classroom" },
+          { id: "slogan", x: 200, y: 40, w: 180, h: 60,
+            dialog: "坐直了！……骗你的，偷偷发会儿呆也没关系。",
+            autoDialog: "坐直了！……骗你的，偷偷发会儿呆也没关系。",
+            scene: "map_classroom" },
+          { id: "desk_teacher", x: 200, y: 220, w: 120, h: 50,
+            dialog: "每天站在这里的人都说要安静，可我听见的悄悄话可不少。",
+            autoDialog: "每天站在这里的人都说要安静，可我听见的悄悄话可不少。",
+            scene: "map_classroom" },
+          { id: "pen_holder", x: 120, y: 220, w: 30, h: 40,
+            dialog: "要用哪一支？写错了也没关系，橡皮就在旁边呢。",
+            autoDialog: "要用哪一支？写错了也没关系，橡皮就在旁边呢。",
+            scene: "map_classroom" },
+          { id: "globe", x: 340, y: 200, w: 50, h: 60,
+            dialog: "转呀转呀。世界这么大，我们偏偏在这里遇见。",
+            autoDialog: "转呀转呀。",
+            autoDialog2: "世界这么大，我们偏偏在这里遇见。",
+            scene: "map_classroom" },
+
+          /* 教学楼（map_building） */
+          { id: "sunset_dialog", x: 350, y: 60, w: 80, h: 80,
+            dialog: "最后一节课结束啦。",
+            autoDialog: "最后一节课结束啦。",
+            scene: "map_building" },
+          { id: "trees", x: 100, y: 200, w: 200, h: 60,
+            dialog: "你们一年比一年高，我们也是哦。只不过，我们不太看得出来。",
+            autoDialog: "你们一年比一年高，我们也是哦。只不过，我们不太看得出来。",
+            scene: "map_building" },
+          { id: "lake", x: 150, y: 240, w: 200, h: 40,
+            dialog: "别太急着走。你看，连云都愿意在这里多待一会儿。",
+            autoDialog: "别太急着走。你看，连云都愿意在这里多待一会儿。",
+            scene: "map_building" },
+          { id: "city_far", x: 350, y: 180, w: 80, h: 60,
+            dialog: "那边有好多好多故事哦。不过，你自己的故事也正在发生呀。",
+            autoDialog: "那边有好多好多故事哦。不过，你自己的故事也正在发生呀。",
+            scene: "map_building" },
+
+          /* 樱花（map_sakura） */
+          { id: "sakura_tree_dialog", x: 30, y: 30, w: 180, h: 180,
+            dialog: "起风了。",
+            autoDialog: "起风了。",
+            scene: "map_sakura" },
+          { id: "sakura_ground_dialog", x: 100, y: 250, w: 280, h: 30,
+            dialog: "落下来，好像也不错。",
+            autoDialog: "落下来，好像也不错。",
+            scene: "map_sakura" },
+          { id: "sun_sakura", x: 250, y: 100, w: 60, h: 60,
+            dialog: "我每天都会落下去呀。所以明天再见，也不是什么难事。",
+            autoDialog: "我每天都会落下去呀。所以明天再见，也不是什么难事。",
+            scene: "map_sakura" },
+          { id: "path", x: 200, y: 200, w: 80, h: 80,
+            dialog: "往前走就好啦。至于会走到哪里，走着走着就知道了。",
+            autoDialog: "往前走就好啦。至于会走到哪里，走着走着就知道了。",
+            scene: "map_sakura" },
+
+          /* 稻田（map_rice） */
+          { id: "rice_field", x: 100, y: 150, w: 280, h: 100,
+            dialog: "风一来，我们就一起点头。嗯，今天也不错。",
+            autoDialog: "风一来，我们就一起点头。嗯，今天也不错。",
+            scene: "map_rice" },
+          { id: "tower", x: 350, y: 80, w: 60, h: 80,
+            dialog: "我站得有点远，不过这里发生的事，我也看得到一点点。",
+            autoDialog: "我站得有点远，不过这里发生的事，我也看得到一点点。",
+            scene: "map_rice" },
+          { id: "hills", x: 100, y: 80, w: 150, h: 40,
+            dialog: "你们总是急着赶路。要不要偶尔也看看我们？",
+            autoDialog: "你们总是急着赶路。要不要偶尔也看看我们？",
+            scene: "map_rice" },
+          { id: "sky", x: 100, y: 20, w: 200, h: 40,
+            dialog: "今天的云没有什么安排。你呢？",
+            autoDialog: "今天的云没有什么安排。你呢？",
+            scene: "map_rice" },
+
+          /* 酒吧（map_final） */
+          { id: "bar_counter", x: 150, y: 150, w: 200, h: 60,
+            dialog: "坐吧。这里不需要你马上说出答案。",
+            autoDialog: "坐吧。这里不需要你马上说出答案。",
+            scene: "map_final" },
+          { id: "bottles", x: 150, y: 80, w: 200, h: 60,
+            dialog: "我们听过很多故事。不过放心，你的故事不用和谁比较。",
+            autoDialog: "我们听过很多故事。不过放心，你的故事不用和谁比较。",
+            scene: "map_final" },
+          { id: "light", x: 150, y: 20, w: 100, h: 40,
+            dialog: "今天就聊到这里吧。剩下的话，下次再说。",
+            autoDialog: "今天就聊到这里吧。剩下的话，下次再说。",
+            scene: "map_final" },
+
+          /* ---------- 类型 2：可选探索（有 memory，画闪光点，可点可不点） ---------- */
+          /* 教室（map_classroom） */
+          { id: "blackboard",x: 100, y: 100, w: 200, h: 60,
+            dialog: "今天的板书还没擦掉呢。好像有些东西，写下来了就不太舍得擦。",
+            memory: "memory_blackboard",
+            scene: "map_classroom" },
+          { id: "books",     x: 120, y: 200, w: 100, h: 40,
+            dialog: "那天课文朗诵，你演万芳的妈妈，我是万芳。",
+            memory: "memory_textbook",
+            scene: "map_classroom" },
+          { id: "photo",     x: 320, y: 40,  w: 80, h: 80,
+            dialog: "是不是我留了那张照片，所以回忆停在了那天。",
+            memory: "memory_photo",
+            scene: "map_classroom" },
+
+          /* 黄昏教室（map_classroom_dusk） */
+          { id: "window_right_dusk", x: 350, y: 60, w: 80, h: 100,
+            memory: "memory_sunset",
+            scene: "map_classroom_dusk" },
+          { id: "desk_dusk", x: 200, y: 200, w: 100, h: 60,
+            dialog: "那一年的我们，在课桌上写下了彼此的名字...",
+            memory: "memory_signature",
+            scene: "map_classroom_dusk" },
+
+          /* 列车（map_train） */
+          { id: "station", x: 100, y: 200, w: 300, h: 80,
+            memory: "memory_baoji_station",
+            scene: "map_train" },
+          { id: "train_display", x: 150, y: 80, w: 180, h: 60,
+            memory: "memory_train_display",
+            scene: "map_train" },
+
+          /* 教学楼（map_building） */
+          { id: "sunset", x: 350, y: 60, w: 80, h: 80,
+            memory: "memory_sunset_02",
+            scene: "map_building" },
+          { id: "running", x: 150, y: 220, w: 100, h: 60,
+            memory: "memory_running",
+            scene: "map_building" },
+
+          /* 下雨（map_rain） */
+          { id: "rain_window", x: 200, y: 100, w: 80, h: 80,
+            memory: "memory_rain",
+            scene: "map_rain" },
+
+          /* 樱花（map_sakura） */
+          { id: "sakura_tree", x: 30, y: 30, w: 180, h: 180,
+            memory: "memory_sakura_tree",
+            scene: "map_sakura" },
+          { id: "sakura_bag", x: 200, y: 220, w: 80, h: 80,
+            memory: "memory_sakura_bag",
+            scene: "map_sakura",
+            required: true },
+          { id: "sakura_girl", x: 330, y: 220, w: 80, h: 80,
+            memory: "memory_sakura_girl",
+            scene: "map_sakura",
+            required: true },
+          { id: "sakura_ground", x: 50, y: 260, w: 200, h: 30,
+            memory: "memory_sakura_ground",
+            scene: "map_sakura",
+            required: true },
+          { id: "sakura_building", x: 380, y: 50, w: 80, h: 150,
+            memory: "memory_sakura_building",
+            scene: "map_sakura" },
+
+          /* 稻田（map_rice）：可探索热区 */
+          { id: "rice_note", x: 200, y: 150, w: 80, h: 80,
+            memory: "memory_rice_note",
+            scene: "map_rice" },
+
+          /* 酒吧（map_final）：可探索热区 */
+          { id: "bar_note", x: 200, y: 200, w: 80, h: 80,
+            memory: "memory_bar_note",
+            scene: "map_final" }
+        ]
+      }
+    }
+  },
+
+  /* ---------- stations：站（轨迹 / 相册的骨架） ----------
+     每站对应一个场景 asset；memories 是该站能收集到的记忆 id（相册里显示）。 */
+  stations: [
+    { id: "st1", n: 1, name: "教室",  asset: "map_classroom",       memories: ["memory_blackboard", "memory_textbook", "memory_photo", "memory_chat_01", "memory_diary"] },
+    { id: "st2", n: 2, name: "黄昏教室", asset: "map_classroom_dusk", memories: ["memory_sunset", "memory_signature"] },
+    { id: "st3", n: 3, name: "列车",  asset: "map_train",           memories: ["memory_baoji_station", "memory_train_display", "memory_peach"] },
+    { id: "st4", n: 4, name: "教学楼", asset: "map_building",        memories: ["memory_sunset_02", "memory_running", "memory_gift"] },
+    { id: "st5", n: 5, name: "樱花",  asset: "map_sakura",          memories: ["memory_sakura_tree", "memory_sakura_bag", "memory_sakura_girl", "memory_sakura_ground", "memory_sakura_building"] },
+    { id: "st6", n: 6, name: "下雨",  asset: "map_rain",            memories: ["memory_rain"] },
+    { id: "st7", n: 7, name: "稻田",  asset: "map_rice",            memories: ["memory_rice_note"] },
+    { id: "st8", n: 8, name: "BAR",   asset: "map_final",           memories: ["memory_bar_note", "memory_bar_phone"] }
+  ]
+};
+
+/* 模块代码的引用入口：内容只认 CONTENT，逻辑只认下面三个别名 */
+var LETTER = CONTENT.letter;
+var MEMORIES = CONTENT.memories;
+var SCENES = CONTENT.scenes;
+
+/* ================= SRC: COLLECTION（统一收集记录：热区物件 + 记忆物件都记在这里，相册回看用） ================= */
+var Collection = (function () {
+  var found = {};
+  function mark(id) { found[id] = true; }
+  function has(id) { return !!found[id]; }
+  function reset() { found = {}; }
+  return { mark: mark, has: has, reset: reset };
+})();
+
+/* ================= SRC: ASSETS（素材接口：逻辑只认语义 ID，绝不写死文件名） =================
+   kind 类型约定（素材接口，未全部实现）：
+     image      静态图 / GIF：浏览器直接播放          —— 已实现
+     sprite     Sprite Sheet：按 frameW/frameH 切帧   —— 已实现
+     procedural 程序生成（无素材时的兜底）            —— 已实现
+     sequence   多帧图循环（rain_01.png ...）         —— 接口预留
+     video      WebM/MP4 循环背景                     —— 接口预留
+   新增类型只需在 register 登记 + 在 load/draw 加对应分支，逻辑层零改动。 */
+var Assets = (function () {
+  var registry = {}, loaded = {};
+
+  function register(spec) {
+    if (!spec || !spec.id) { return; }
+    registry[spec.id] = spec;
+    loaded[spec.id] = undefined;
+  }
+  function get(id) { return registry[id] || null; }
+  function has(id) { return !!registry[id]; }
+  function load(id, onDone) {
+    var spec = registry[id];
+    if (!spec) { if (onDone) { onDone(null); } return; }
+    if (loaded[id] !== undefined) { if (onDone) { onDone(loaded[id]); } return; }
+    if (spec.kind === "sequence" || spec.kind === "video") {
+      loaded[id] = null;                       // 接口预留：暂不加载
+      if (onDone) { onDone(null); }
+      return;
+    }
+    if (spec.kind === "procedural" || !spec.src) {
+      loaded[id] = null;                       // 无素材 → 程序化兜底
+      if (onDone) { onDone(null); }
+      return;
+    }
+    var img = new Image();
+    img.onload = function () { loaded[id] = img; if (onDone) { onDone(img); } };
+    img.onerror = function () { loaded[id] = null; if (onDone) { onDone(null); } };
+    img.src = spec.src;
+  }
+  function image(id) {
+    var i = loaded[id];
+    return (i === undefined || i === null) ? null : i;
+  }
+  function isLoaded(id) { return loaded[id] !== undefined && loaded[id] !== null; }
+  /* 通用绘制：image/gif 直接画；sprite 按帧切。返回 false 表示无图（调用方画程序化兜底）。 */
+  function draw(ctx, id, dx, dy, dw, dh, frame, flipH) {
+    var spec = registry[id], img = image(id);
+    if (!spec || !img) { return false; }
+    if (spec.kind === "sprite") {
+      var cols = spec.frames ? spec.frames[0] : 1;
+      var fw = spec.frameW || Math.floor(img.width / cols);
+      var fh = spec.frameH || Math.floor(img.height / (spec.frames ? spec.frames[1] : 1));
+      var f = frame || 0;
+      var sx = (f % cols) * fw, sy = Math.floor(f / cols) * fh;
+      if (flipH) {
+        ctx.save();
+        ctx.translate(dx + dw, dy);
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, sx, sy, fw, fh, 0, 0, dw, dh);
+        ctx.restore();
+      } else {
+        ctx.drawImage(img, sx, sy, fw, fh, dx, dy, dw, dh);
+      }
+    } else {
+      ctx.drawImage(img, dx, dy, dw, dh);
+    }
+    return true;
+  }
+  return { register: register, get: get, has: has, load: load, image: image, isLoaded: isLoaded, draw: draw };
+})();
+
+/* ================= SRC: AUDIO（声音层，音乐留插槽可替换，接口已预留不实现） ================= */
+var AudioManager = (function () {
+  var ctx = null, muted = false;
+  var sfxVolume = 0.5; /* 音效音量，默认 50% */
+  var musicVolume = 0.3; /* 音乐音量，默认 30% */
+  function ensure() {
+    if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ctx = null; } }
+    if (ctx && ctx.state === "suspended") { ctx.resume(); }
+    return ctx;
+  }
+  function tone(freq, dur, type, vol, delay) {
+    var c = ensure(); if (!c || muted) return;
+    var t = c.currentTime + (delay || 0);
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type || "square"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime((vol || 0.07) * sfxVolume, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  }
+  return {
+    init: function () { ensure(); },
+    click: function () { tone(720, 0.06, "square", 0.045); },
+    drop: function () { tone(523, 0.12, "square", 0.07); tone(784, 0.16, "square", 0.07, 0.09); tone(1046, 0.22, "square", 0.06, 0.18); },
+    popupOpen: function () { tone(660, 0.08, "triangle", 0.06); tone(880, 0.1, "triangle", 0.05, 0.07); },
+    popupClose: function () { tone(440, 0.07, "triangle", 0.05); },
+    bubble: function () { tone(520, 0.09, "sine", 0.04); tone(740, 0.1, "sine", 0.04, 0.1); },
+    setMuted: function (m) { muted = !!m; },
+    isMuted: function () { return muted; },
+    /* 调音量 */
+    setSfxVolume: function (v) { sfxVolume = v; },
+    getSfxVolume: function () { return sfxVolume; },
+    setMusicVolume: function (v) {
+      musicVolume = v;
+      /* 调整所有音乐的音量 */
+      for (var slot in this.music) {
+        if (this.music[slot]) {
+          this.music[slot].volume = v;
+        }
+      }
+    },
+    getMusicVolume: function () { return musicVolume; },
+    /* 音乐层：只留插槽，之后替换歌曲不用改核心代码。
+       例：AudioManager.setMusic("theme", "assets/audio/bgm_theme.mp3", true); */
+    music: { scene: null, memory: null, theme: null },
+    setMusic: function (slot, url, loop) {
+      if (!this.music[slot]) { this.music[slot] = new Audio(); }
+      var a = this.music[slot];
+      a.loop = !!loop; a.src = url; a.volume = musicVolume;
+      if (!muted) { var p = a.play(); if (p && p.catch) { p.catch(function () {}); } }
+    },
+    /* 保留曲目（不擅自使用）：《总有一天你会出现在你身边》——之后由你决定放开场 / 结尾 / 主题。 */
+    reservedSong: "《总有一天你会出现在你身边》"
+  };
+})();
+
+/* ================= SRC: SCENE CORE（数据层：碰撞 / 出生点 / 触发区，纯逻辑不碰视觉） ================= */
+var SceneCore = (function () {
+  var S = SCENES.classroom;
+  var TILE = S.visual.tileW;
+  var grid = S.data.grid;
+  var W = grid[0].length, H = grid.length;
+  var solid = S.data.solid;
+  function tileAt(tx, ty) { if (tx < 0 || ty < 0 || tx >= W || ty >= H) { return "#"; } return grid[ty][tx]; }
+  function isSolid(t) { return solid.indexOf(t) !== -1; }
+  function collides(px, py, r) {
+    var pts = [[px - r, py - r], [px + r, py - r], [px - r, py + r], [px + r, py + r]];
+    for (var i = 0; i < 4; i++) {
+      var tx = Math.floor(pts[i][0] / TILE), ty = Math.floor(pts[i][1] / TILE);
+      if (isSolid(tileAt(tx, ty))) { return true; }
+    }
+    return false;
+  }
+  function zone(id) {
+    var zs = S.data.triggerZones;
+    for (var i = 0; i < zs.length; i++) { if (zs[i].id === id) { return zs[i]; } }
+    return null;
+  }
+  function zoneRect(id) {
+    var z = zone(id);
+    if (!z) { return null; }
+    return { x: z.x * TILE, y: z.y * TILE, w: z.w * TILE, h: z.h * TILE };
+  }
+  function spawn() { return S.data.spawn; }
+  return { TILE: TILE, W: W, H: H, collides: collides, zone: zone, zoneRect: zoneRect, spawn: spawn };
+})();
+
+/* ================= SRC: MAP RENDERER（表现层：整图素材优先，无图回退程序化瓦片） ================= */
+var MapRenderer = (function () {
+  var S = SCENES.classroom;
+  var currentAssetId = S.visual.assetId;
+  var C = {
+    floorA: "#333048", floorB: "#2d2a42", wall: "#4d4a6a", wallDark: "#3c3952",
+    sky: "#86b9d8", frame: "#57537a", board: "#2c5e52", boardFrame: "#3d3a5c",
+    chalk: "#d9e6d2", desk: "#7a4a26", deskTop: "#8f5a30", deskDark: "#5f3a1f",
+    deskLeg: "#4a2d17", book: "#b23a3a", bookPage: "#f6efe0", bookSpine: "#8e2c2c"
+  };
+  function pxRect(ctx, x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+
+  function switchScene(assetId) {
+    currentAssetId = assetId;
+    if (assetId && !Assets.isLoaded(assetId)) { Assets.load(assetId); }
+    /* 先停止所有视频 */
+    ["map_rain", "map_escape"].forEach(function(vid) {
+      var el = document.getElementById("bg_video_" + vid);
+      if (el) { el.pause(); }
+    });
+    /* 视频背景：切换到下雨/逃离场景时手动播放 */
+    if (assetId === "map_rain" || assetId === "map_escape") {
+      var video = document.getElementById("bg_video_" + assetId);
+      if (video) {
+        video.volume = 0.02;
+        video.play().catch(function(e) { console.log("video play error:", e); });
+      }
+    }
+  }
+
+  function draw(ctx, time, activeZoneId) {
+    var assetId = currentAssetId;
+    var r = Camera.rect();
+    /* 视频背景：map_rain / map_escape 用 video 代替图片 */
+    if (assetId === "map_rain" || assetId === "map_escape") {
+      var video = document.getElementById("bg_video_" + assetId);
+      if (video && video.readyState >= 2) {
+        var iw = video.videoWidth, ih = video.videoHeight;
+        var sx = r.x / (SceneCore.W * SceneCore.TILE) * iw;
+        var sy = r.y / (SceneCore.H * SceneCore.TILE) * ih;
+        var sw = r.w / (SceneCore.W * SceneCore.TILE) * iw;
+        var sh = r.h / (SceneCore.H * SceneCore.TILE) * ih;
+        ctx.drawImage(video, sx, sy, sw, sh, 0, 0, ctx.canvas.width, ctx.canvas.height);
+        drawZoneGlow(ctx, time, activeZoneId);
+        return;
+      }
+    }
+    var img = assetId ? Assets.image(assetId) : null;
+    if (img) {
+      /* 镜头窗口对应到图片上的源区域，画满画布（宽屏退化为整图）；画布比例跟随屏幕，显示等比不拉伸 */
+      var iw = img.width, ih = img.height;
+      var sx = r.x / (SceneCore.W * SceneCore.TILE) * iw;
+      var sy = r.y / (SceneCore.H * SceneCore.TILE) * ih;
+      var sw = r.w / (SceneCore.W * SceneCore.TILE) * iw;
+      var sh = r.h / (SceneCore.H * SceneCore.TILE) * ih;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, ctx.canvas.width, ctx.canvas.height);
+    } else {
+      /* 程序化瓦片：按镜头平移缩放绘制 */
+      ctx.save();
+      var scx = ctx.canvas.width / r.w, scy = ctx.canvas.height / r.h;
+      ctx.setTransform(scx, 0, 0, scy, -r.x * scx, -r.y * scy);
+      drawTiles(ctx);
+      ctx.restore();
+    }
+    drawZoneGlow(ctx, time, activeZoneId);
+  }
+
+  function drawTiles(ctx) {
+    for (var ty = 0; ty < SceneCore.H; ty++) {
+      for (var tx = 0; tx < SceneCore.W; tx++) { drawTile(ctx, tx, ty); }
+    }
+  }
+  function drawTile(ctx, tx, ty) {
+    var t = S.data.grid[ty][tx], x = tx * SceneCore.TILE, y = ty * SceneCore.TILE;
+    switch (t) {
+      case ".":
+        pxRect(ctx, x, y, SceneCore.TILE, SceneCore.TILE, ((tx + ty) % 2) ? C.floorA : C.floorB);
+        break;
+      case "#":
+        pxRect(ctx, x, y, SceneCore.TILE, SceneCore.TILE, C.wall);
+        pxRect(ctx, x, y + SceneCore.TILE - 3, SceneCore.TILE, 3, C.wallDark);
+        pxRect(ctx, x, y, 2, SceneCore.TILE, C.wallDark);
+        break;
+      case "W":
+        pxRect(ctx, x, y, SceneCore.TILE, SceneCore.TILE, C.frame);
+        pxRect(ctx, x + 2, y + 2, SceneCore.TILE - 4, SceneCore.TILE - 4, C.sky);
+        pxRect(ctx, x + 6, y + 2, 2, SceneCore.TILE - 4, C.frame);
+        pxRect(ctx, x + 2, y + 7, SceneCore.TILE - 4, 2, C.frame);
+        break;
+      case "B":
+        pxRect(ctx, x, y, SceneCore.TILE, SceneCore.TILE, C.board);
+        pxRect(ctx, x, y, SceneCore.TILE, 2, C.boardFrame);
+        if ((tx * 7 + ty * 13) % 5 === 0) { pxRect(ctx, x + 3, y + 5, 7, 1, C.chalk); }
+        break;
+      case "D": drawDesk(ctx, x, y, false); break;
+      case "T": drawDesk(ctx, x, y, true); break;
+    }
+  }
+  function drawDesk(ctx, x, y, hasBook) {
+    pxRect(ctx, x, y, SceneCore.TILE, 6, C.desk);
+    pxRect(ctx, x, y + 1, SceneCore.TILE, 2, C.deskTop);
+    pxRect(ctx, x, y + 6, SceneCore.TILE, 6, C.deskDark);
+    pxRect(ctx, x + 2, y + 12, 2, 4, C.deskLeg);
+    pxRect(ctx, x + 12, y + 12, 2, 4, C.deskLeg);
+    if (hasBook) {
+      pxRect(ctx, x + 4, y + 1, 10, 7, C.book);
+      pxRect(ctx, x + 4, y + 2, 10, 2, C.bookPage);
+      pxRect(ctx, x + 4, y + 5, 10, 1, C.bookSpine);
+      pxRect(ctx, x + 9, y + 1, 1, 7, C.bookSpine);
+    }
+  }
+  function drawZoneGlow(ctx, time, zoneId) {
+    if (!zoneId) { return; }
+    var zr = SceneCore.zoneRect(zoneId);
+    if (!zr) { return; }
+    if (!Camera.inView(zr.x + zr.w / 2, zr.y + zr.h / 2, 40)) { return; }
+    var tl = Camera.toCanvas(zr.x, zr.y), br = Camera.toCanvas(zr.x + zr.w, zr.y + zr.h);
+    var w = br.x - tl.x, h = br.y - tl.y;
+    var a = 0.35 + 0.3 * Math.sin(time * 5);
+    pxRect(ctx, tl.x - 4, tl.y - 4, w + 8, h + 8, "rgba(255,209,102," + (a * 0.4).toFixed(2) + ")");
+    pxRect(ctx, tl.x - 2, tl.y - 2, w + 4, h + 4, "rgba(255,209,102," + a.toFixed(2) + ")");
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "bold 12px monospace";
+    ctx.fillText("!", tl.x + w / 2 - 3, tl.y - 6);
+  }
+  return { draw: draw, switchScene: switchScene, get currentAssetId() { return currentAssetId; } };
+})();
+
+/* ================= SRC: TRIGGERS（触发状态：哪个场景物件激活、哪些记忆已收集） ================= */
+var Triggers = (function () {
+  var activeSceneId = null, collected = {};
+  function activateScene(id) { activeSceneId = id; }
+  function clearScene() { activeSceneId = null; }
+  function isSceneActive(id) { return activeSceneId === id; }
+  function activeScene() { return activeSceneId; }
+  function isCollected(id) { return !!collected[id]; }
+  function markCollected(id) { collected[id] = true; if (activeSceneId === id) { activeSceneId = null; } }
+  function reset() { collected = {}; activeSceneId = null; }
+  return { activateScene: activateScene, clearScene: clearScene, isSceneActive: isSceneActive, activeScene: activeScene, isCollected: isCollected, markCollected: markCollected, reset: reset };
+})();
+
+/* ================= SRC: PLAYER（控制器：移动 + 碰撞 + 开场跳入，纯逻辑不碰视觉） ================= */
+var Player = (function () {
+  var x = 0, y = 0, dir = 0, moving = false, wasMoving = false;
+  var SPEED = 64, keys = { up: false, down: false, left: false, right: false };
+  var MEOWS = ["喵~", "跟我来", "这边走", "嗯？"];
+  /* 开场跳入动画：猫从对话框下方跳进画面右下角 */
+  var intro = { active: false, t: 0, dur: 0.9, fx: 0, fy: 0, tx: 0, ty: 0 };
+  function spawn(tx, ty) {
+    x = tx * SceneCore.TILE + 8; y = ty * SceneCore.TILE + 8;
+    /* 从画布外下方跳入到这个点 */
+    intro.active = true; intro.t = 0;
+    intro.fx = x; intro.fy = SceneCore.H * SceneCore.TILE + 60;  // 从黑色底框下方跳进
+    intro.tx = x; intro.ty = y;
+    dir = 2; // 朝右走帧
+  }
+  function setKey(k, v) { keys[k] = v; }
+  function update(dt) {
+    if (intro.active) {
+      intro.t += dt;
+      var p = Math.min(1, intro.t / intro.dur);
+      /* 抛物线：x 线性，y 先升后降 */
+      x = intro.fx + (intro.tx - intro.fx) * p;
+      var arc = Math.sin(p * Math.PI) * 40;  // 跳跃弧度
+      y = intro.fy + (intro.ty - intro.fy) * p - arc;
+      moving = true; dir = 2;
+      if (p >= 1) { intro.active = false; moving = false; y = intro.ty; dir = 0; }
+      return;
+    }
+    var vx = 0, vy = 0;
+    if (keys.up) { vy -= 1; } if (keys.down) { vy += 1; }
+    if (keys.left) { vx -= 1; } if (keys.right) { vx += 1; }
+    moving = (vx !== 0 || vy !== 0);
+    if (moving) {
+      if (vx !== 0 && vy !== 0) { vx *= 0.7071; vy *= 0.7071; }
+      if (vx > 0) { dir = 2; }            // 右走 → 右侧面
+      else if (vx < 0) { dir = 3; }       // 左走 → 左侧面
+      else { dir = 0; }                   // 上下走 → 正面
+      var nx = x + vx * SPEED * dt;
+      if (!SceneCore.collides(nx, y, 5)) { x = nx; }
+      var ny = y + vy * SPEED * dt;
+      if (!SceneCore.collides(x, ny, 5)) { y = ny; }
+    } else {
+      dir = 0;                              // 不操作 → 正面朝我
+    }
+    /* 刚从静止开始走，偶尔喵一声 */
+    if (moving && !wasMoving && Math.random() < 0.15) {
+      Bubble.show(MEOWS[Math.floor(Math.random() * MEOWS.length)], 1400);
+    }
+    wasMoving = moving;
+  }
+  function state() { return { x: x, y: y, dir: dir, moving: moving }; }
+  return { spawn: spawn, setKey: setKey, update: update, state: state };
+})();
+
+/* ================= SRC: CAT DIALOG（黑猫对白系统：按场景随机弹，克制不打扰） ================= */
+var CatDialog = (function () {
+  var dialogs = {
+    map_classroom: [
+      "这里好像还有粉笔灰的味道。",
+      "今天教室好安静呀。",
+      "我们偷偷发会儿呆吧。"
+    ],
+    map_classroom_dusk: [
+      "天快黑啦，我们再待一会儿。",
+      "晚霞好漂亮呀。",
+      "影子都变长了呢。"
+    ],
+    map_train: [
+      "坐车的时候，看看窗外就很好。",
+      "下一站就要到啦。",
+      "摇摇晃晃的，有点想睡觉。"
+    ],
+    map_building: [
+      "我们到啦！要四处看看吗？",
+      "太阳都落山了。",
+      "这里的树好高呀。"
+    ],
+    map_sakura: [
+      "哇，花瓣落到地上啦。",
+      "起风了呢。",
+      "春天真好呀。"
+    ],
+    map_rain: [
+      "听一会儿雨声吧。",
+      "下雨的时候，世界都变安静了。",
+      "滴答滴答的，真好听。"
+    ],
+    map_rice: [
+      "风来啦！你看你看。",
+      "金黄色的，好好看。",
+      "这一片稻田好大呀。"
+    ],
+    map_escape: [
+      "我们继续走吧。",
+      "前面是什么样子的呢？",
+      "路还长着呢。"
+    ],
+    map_final: [
+      "这里的灯光暖暖的。",
+      "坐下来歇一会儿吧。",
+      "今天就聊到这里吧。"
+    ]
+  };
+  var lastTime = 0;
+  var MIN_INTERVAL = 25000; /* 两次对白之间至少间隔 25 秒 */
+  var said = {}; /* 记录这个场景已经说过哪些句子了 */
+
+  function reset() {
+    said = {};
+    lastTime = 0;
+  }
+
+  function update() {
+    var now = performance.now();
+    if (now - lastTime < MIN_INTERVAL) { return; } /* 间隔不够，不弹 */
+
+    /* 正在打字机、弹窗打开、掉落物出现时，不弹 */
+    if (Dialogue.typing && Dialogue.typing()) { return; }
+    if (Popup.isOpen && Popup.isOpen()) { return; }
+    if (MemoryDrop.isActive && MemoryDrop.isActive()) { return; }
+    if (Hotspots.isOpen && Hotspots.isOpen()) { return; }
+
+    var scene = MapRenderer.currentAssetId;
+    var list = dialogs[scene];
+    if (!list || !list.length) { return; }
+
+    /* 随机选一句没说过的 */
+    if (!said[scene]) { said[scene] = []; }
+    var unsaid = list.filter(function (d) { return said[scene].indexOf(d) === -1; });
+    if (!unsaid.length) { said[scene] = []; unsaid = list; } /* 都说过了，重新开始 */
+
+    var pick = unsaid[Math.floor(Math.random() * unsaid.length)];
+    said[scene].push(pick);
+    Bubble.show(pick, null, null, 4000); /* 显示 4 秒 */
+    lastTime = now;
+  }
+
+  return { update: update, reset: reset };
+})();
+
+/* ================= SRC: CHARACTER RENDERER（表现层：Sprite Sheet 优先，无图回退程序化小猫） ================= */
+var CharacterRenderer = (function () {
+  var ASSET_ID = "player_cat";
+  var P = { body: "#e8934a", cream: "#f6efe0", pink: "#f2a2b0", dark: "#2b2b3d" };
+
+  function draw(ctx, st, time) {
+    var w = 16, h = 16;
+    /* 世界坐标 → 画布坐标（镜头窗口换算），否则小猫走到世界右半边就出画 */
+    var c = Camera.toCanvas(st.x, st.y);
+    if (Assets.isLoaded(ASSET_ID) && Assets.image(ASSET_ID)) {
+      var spec = Assets.get(ASSET_ID);
+      if (spec.size) { w = spec.size[0]; h = spec.size[1]; }
+      /* dirFrames: 每方向一个帧索引数组。
+         站立时用该方向首帧；移动时按 fps 循环。 */
+      var dirFrames = spec.dirFrames || { 0: [0], 1: [0], 2: [0], 3: [0] };
+      var arr = dirFrames[st.dir] || dirFrames[0];
+      var idx = st.moving ? arr[Math.floor(time * (spec.fps || 8)) % arr.length] : arr[0];
+      /* sheet 里只有朝左帧，右走时水平翻转 */
+      var flipH = (st.dir === 2);
+      Assets.draw(ctx, ASSET_ID, Math.round(c.x - w / 2), Math.round(c.y - h / 2), w, h, idx, flipH);
+      return;
+    }
+    drawFallback(ctx, c.x, c.y, st.dir, st.moving, time);
+  }
+
+  function drawFallback(ctx, x, y, dir, moving, time) {
+    var bob = (moving && Math.floor(time * 4.5) % 2 === 1) ? 1 : 0;
+    function px(ox, oy, pw, ph, col) { ctx.fillStyle = col; ctx.fillRect(Math.round(x - 8 + ox), Math.round(y - 8 + oy), pw, ph); }
+    if (dir === 2 || dir === 3) {
+      px(dir === 2 ? 1 : 13, 5 + bob, 3, 7, P.body);
+      px(dir === 2 ? 1 : 13, 11 + bob, 3, 2, "#1e1e2f");
+    } else {
+      px(12, 6 + bob, 3, 6, P.body);
+      px(12, 11 + bob, 3, 2, "#1e1e2f");
+    }
+    px(4, 7 + bob, 8, 8, P.body);
+    px(5, 10 + bob, 6, 5, P.cream);
+    var ly = 13 + bob;
+    if (moving && Math.floor(time * 4.5) % 2 === 1) {
+      px(5, ly - 1, 2, 3, P.cream); px(9, ly, 2, 3, P.cream);
+    } else {
+      px(5, ly, 2, 3, P.cream); px(9, ly - 1, 2, 3, P.cream);
+    }
+    px(4, 0 + bob, 8, 7, P.body);
+    px(4, 1 + bob, 1, 1, P.pink); px(11, 1 + bob, 1, 1, P.pink);
+    if (dir === 1) {
+      px(6, 2 + bob, 4, 4, P.body);
+    } else {
+      px(5, 3 + bob, 2, 2, P.dark); px(9, 3 + bob, 2, 2, P.dark);
+      px(5, 3 + bob, 1, 1, "#fff"); px(9, 3 + bob, 1, 1, "#fff");
+      px(7, 5 + bob, 2, 1, P.pink);
+      px(6, 6 + bob, 1, 1, P.dark); px(9, 6 + bob, 1, 1, P.dark);
+    }
+  }
+  return { draw: draw };
+})();
+
+/* ================= SRC: CAMERA（镜头：手机竖屏下世界比屏幕大，镜头跟随小猫，
+   露出世界的一个窗口。所有画布绘制 / 点击 / 浮层定位都经它换算，宽屏则退化为全览。） ================= */
+var Camera = (function () {
+  var WORLD_W = 480, WORLD_H = 288;   // 逻辑世界尺寸（与 SceneCore 一致）
+  function wrapSize() {
+    var w = document.getElementById("canvaswrap");
+    var cw = w ? w.clientWidth : 0, ch = w ? w.clientHeight : 0;
+    if (!cw || !ch) { return { w: 390, h: 600 }; }
+    return { w: cw, h: ch };
+  }
+  /* 当前可见窗口（逻辑世界坐标），跟随猫并钳制在世界边界内 */
+  function rect() {
+    var ws = wrapSize(), a = ws.w / ws.h;
+    var lw = WORLD_H * a, lh = WORLD_H;
+    if (lw > WORLD_W) { lw = WORLD_W; lh = WORLD_W / a; }   // 宽屏：看全宽
+    var p = Player.state();
+    var lx = Math.max(0, Math.min(WORLD_W - lw, p.x - lw / 2));
+    var ly = Math.max(0, Math.min(WORLD_H - lh, p.y - lh / 2));
+    return { x: lx, y: ly, w: lw, h: lh };
+  }
+  /* 画布逻辑尺寸（随屏幕比例变化，保证显示等比不拉伸） */
+  function logical() {
+    var c = document.getElementById("scene");
+    return { w: c ? c.width : 480, h: c ? c.height : 288 };
+  }
+  /* 世界坐标 → 画布逻辑坐标（画布尺寸动态，与镜头窗口 1:1 对应） */
+  function toCanvas(lx, ly) {
+    var r = rect(), L = logical();
+    return { x: (lx - r.x) / r.w * L.w, y: (ly - r.y) / r.h * L.h };
+  }
+  /* 世界坐标 → 视口比例（0~1，用于 DOM 浮层定位） */
+  function toScreen(lx, ly) {
+    var r = rect();
+    return { x: (lx - r.x) / r.w, y: (ly - r.y) / r.h };
+  }
+  /* 画布坐标 → 世界坐标（点击命中用） */
+  function toWorld(cx, cy) {
+    var r = rect(), L = logical();
+    return { x: r.x + (cx / L.w) * r.w, y: r.y + (cy / L.h) * r.h };
+  }
+  function inView(lx, ly, pad) {
+    var r = rect();
+    return lx >= r.x - pad && lx <= r.x + r.w + pad && ly >= r.y - pad && ly <= r.y + r.h + pad;
+  }
+  return { rect: rect, toCanvas: toCanvas, toScreen: toScreen, toWorld: toWorld, inView: inView, logical: logical, WORLD_W: WORLD_W, WORLD_H: WORLD_H };
+})();
+
+/* ================= SRC: DIALOGUE（信件推进：分段 + 打字机 + 触发分发，逻辑不变） ================= */
+var Dialogue = (function () {
+  var segs = LETTER.segments, index = 0, typing = false, timer = null;
+  var waiting = null; /* 当前等待的热区 id，玩家收集完后解除 */
+  var textEl, barEl, nextEl;
+  function init() {
+    textEl = document.getElementById("dtext");
+    barEl = document.getElementById("dbarfill");
+    nextEl = document.getElementById("dnext");
+  }
+  function start() {
+    /* 测试跳转：URL #seg=N 直接跳到第 N 段 */
+    var m = window.location.hash.match(/seg=(\d+)/);
+    index = m ? Math.min(parseInt(m[1]), segs.length - 1) : 0;
+    /* 跳转时重置所有状态（热区/掉落物/礼物盒/记忆收集） */
+    Hotspots.reset();
+    MemoryDrop.reset();
+    GiftBox.reset();
+    Triggers.reset();
+    /* 跳转时往前找最近的 scene，强制切换场景（避免 currentAssetId 错） */
+    for (var i = index; i >= 0; i--) {
+      if (segs[i].scene) {
+        MapRenderer.switchScene(segs[i].scene.asset);
+        Station.applyScene(segs[i].scene.asset, segs[i].scene.aspect);
+        break;
+      }
+    }
+    show();
+  }
+  function show() {
+    if (index >= segs.length) {
+      /* 检查是不是所有热区都收集完了 */
+      if (Hotspots.allCollected()) {
+        Ending.show();
+      } else {
+        /* 没有收集完，提醒他倒回去找 */
+        Bubble.show("还有一些回忆没有找到，倒回去看看吧...", null, null, 4000, "item");
+      }
+      return;
+    }
+    var s = segs[index];
+    clearInterval(timer);
+    textEl.textContent = "";
+    nextEl.style.display = "none";
+    waiting = null;
+    /* 非记忆段：自动收起上一个记忆的提示条（切场景后不残留） */
+    if (!s.memory) { SceneHint.hide(); }
+    typing = true;
+    var i = 0;
+    timer = setInterval(function () {
+      i++;
+      textEl.textContent = s.text.slice(0, i);
+      if (i >= s.text.length) {
+        clearInterval(timer); typing = false;
+        onTyped();
+      }
+    }, 26);
+    barEl.style.width = (((index + 1) / segs.length) * 100).toFixed(1) + "%";
+    /* 场景切换：读到带 scene 的段，换背景图 + 更新站标 + 画布比例；
+       同时强制清场上一个场景的所有残留（对白气泡/掉落物/提示条），不跨场景 */
+    if (s.scene) {
+      Hotspots.forceClose();
+      MemoryDrop.reset();
+      GiftBox.reset();
+      SceneHint.hide();
+      Bubble.hide();
+      Popup.close(); /* 切场景的时候，自动关掉所有弹窗 */
+      Hotspots.reset(); /* 切场景重置热区状态 */
+      CatDialog.reset(); /* 切场景重置黑猫对白状态 */
+      MapRenderer.switchScene(s.scene.asset);
+      Station.applyScene(s.scene.asset, s.scene.aspect);
+      /* 下雨场景：先出视频，然后出第二张图（memory_rain_letter） */
+      if (s.scene.asset === "map_rain") {
+        setTimeout(function() {
+          /* 先弹 memory_rain_letter（带蓝框框的照片） */
+          Popup.open(MEMORIES["memory_rain_letter"], function() {
+            Triggers.markCollected("memory_rain_letter");
+            /* 关掉后再弹 memory_rain（第一张照片） */
+            setTimeout(function() {
+              Popup.open(MEMORIES["memory_rain"], function() {
+                Triggers.markCollected("memory_rain");
+              });
+            }, 1000);
+          });
+        }, 2000);
+      }
+    }
+    triggerMemory(s);
+  }
+  function onTyped() {
+    var s = segs[index];
+    /* 暂停点：等玩家探索对应热区（物件闪光 + 👇手指，点物件→弹窗→关闭→继续） */
+    if (s.pauseAt && !Hotspots.isCollected(s.pauseAt)) {
+      waiting = s.pauseAt;
+      nextEl.style.display = "none";
+      Bubble.show("跟我来", 2500);
+      Hotspots.highlightOnly(s.pauseAt);
+      return;
+    }
+    nextEl.style.display = "block";
+  }
+  function triggerMemory(s) {
+    if (!s.memory) { return; }
+    var m = MEMORIES[s.memory]; if (!m) { return; }
+    if (Triggers.isCollected(m.id)) { return; }
+    var pr = m.presentation;
+    if (m.trigger.type === "direct") {
+      /* 直接弹出（开场语音播放器等），不走掉落物 */
+      Popup.open(m, function () {
+        Triggers.markCollected(m.id);
+        Dialogue.resume();
+      });
+    } else if (m.trigger.type === "scene") {
+      Triggers.activateScene(m.id);
+      /* 不再用顶部提示条，改成小猫说一句引导语（锚小猫头顶） */
+      Bubble.show(pr.hintText || "好像有什么在发光…去看看？", null, null, 3200);
+    } else if (m.trigger.type === "drop") {
+      /* 礼物盒特殊：用 GiftBox 模块（气球放飞） */
+      if (m.id === "memory_gift") {
+        var ps = Player.state();
+        /* 礼物盒放小猫右边远一点的位置，引导小猫跑过去 */
+        GiftBox.spawn(ps.x + 120, ps.y);
+        Bubble.show("好像有个礼物盒在那边…跑过去看看？", null, null, 3200);
+      } else {
+        MemoryDrop.spawn(m);
+      }
+    }
+  }
+  function finishType() {
+    if (!typing) { return; }
+    clearInterval(timer); typing = false;
+    textEl.textContent = segs[index].text;
+    onTyped();
+  }
+  function advance() {
+    if (index >= segs.length) { return; }
+    if (waiting) { return; } /* 等待探索中，不推进 */
+    if (typing) { finishType(); AudioManager.click(); return; }
+    /* 推进就收：信件往下走时，自动收掉场上残留（掉落物/气泡/热区弹窗） */
+    MemoryDrop.reset();
+    Bubble.hide();
+    Hotspots.forceClose();
+    index++;
+    show();
+    AudioManager.click();
+  }
+  /* 回退上一句（纠错用）：暂停等待中不回退；正在打字则直接跳过当前句回到上一句 */
+  function back() {
+    if (index <= 0 || waiting) { return; }
+    if (typing) { finishType(); }
+    index--;
+    show();
+    AudioManager.click();
+  }
+  /* Hotspots 收集完对应热区后调用：解锁信件 */
+  function resume(hotspotId) {
+    if (waiting === hotspotId) {
+      waiting = null;
+      Hotspots.highlightOnly(null);
+      nextEl.style.display = "block";
+    }
+  }
+  return { init: init, start: start, advance: advance, back: back, resume: resume, currentIndex: function () { return index; }, typing: function () { return typing; } };
+})();
+
+/* ================= SRC: MEMORY DROP（掉落物理不变；物件渲染走 Assets + 镜头换算，无图回退程序化图标） ================= */
+var MemoryDrop = (function () {
+  var item = null, bingoEl;
+  function init() { bingoEl = document.getElementById("bingo"); }
+  function spawn(mem) {
+    if (item) { return; }
+    /* 掉在当前镜头画面的居中底部（保证在视野里，必点剧情物品一定能看到） */
+    var cam = Camera.rect();
+    var x = cam.x + cam.w / 2; /* 当前镜头的水平居中 */
+    var targetY = cam.y + cam.h - 60; /* 当前镜头底部往上 60 像素（再往下挪一点） */
+    /* 从上面掉下来：初始 y 在目标上方 80 像素 */
+    item = { mem: mem, x: x, y: targetY - 80, vy: 0, state: "falling", bounces: 0, t: 0, targetY: targetY };
+    /* BINGO 画面正中央（不跟掉落物走） */
+    if (bingoEl) {
+      bingoEl.style.left = "50%";
+      bingoEl.style.top = "50%";
+      bingoEl.style.display = "block";
+      bingoEl.style.animation = "none";
+      void bingoEl.offsetWidth;
+      bingoEl.style.animation = "bingoanim 1.5s ease-out forwards";
+    }
+    /* 小猫说一句引导语（气泡默认锚小猫头顶） */
+    var hint = mem.presentation && mem.presentation.hintText ? mem.presentation.hintText : "好像掉了些东西出来，快来看看";
+    Bubble.show(hint, null, null, 3200);
+    AudioManager.drop();
+  }
+  function position() { return item ? { x: item.x, y: item.y } : { x: 240, y: 150 }; }
+  function update(dt) {
+    if (!item) { return; }
+    item.t += dt;
+    /* 下落物理 */
+    if (item.state === "falling") {
+      item.vy += 600 * dt;
+      item.y += item.vy * dt;
+      if (item.y >= item.targetY) {
+        item.y = item.targetY;
+        item.vy = -item.vy * 0.35;
+        item.bounces++;
+        if (item.bounces >= 2 || Math.abs(item.vy) < 40) {
+          item.state = "settle";
+          item.vy = 0;
+        }
+      }
+    }
+  }
+  function draw(ctx) {
+    if (!item) { return; }
+    if (!Camera.inView(item.x, item.y, 40)) { return; }
+    var c = Camera.toCanvas(item.x, item.y);
+    var emoji = "💬";
+    var icon = item.mem.presentation.icon;
+    if (icon === "diary") { emoji = "📔"; }
+    else if (icon === "peach") { emoji = "🍑"; }
+    else if (icon === "chat") { emoji = "💬"; }
+    else if (icon === "textbook") { emoji = "📖"; }
+    /* 更亮的光晕，更清晰明显 */
+    var a = 0.6 + 0.3 * Math.sin(item.t * 4);
+    ctx.fillStyle = "rgba(255,240,180," + a.toFixed(2) + ")";
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 20, 0, Math.PI * 2);
+    ctx.fill();
+    /* emoji 加阴影，更突出 */
+    ctx.font = "28px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowColor = "rgba(0,0,0,0.3)";
+    ctx.shadowBlur = 4;
+    ctx.fillText(emoji, c.x, c.y);
+    ctx.shadowBlur = 0;
+  }
+  function hitTest(px, py) {
+    if (!item || item.state !== "settle") { return false; }
+    var dx = px - item.x, dy = py - item.y;
+    return (dx * dx + dy * dy) < 20 * 20;
+  }
+  function collect() {
+    if (!item) { return; }
+    var m = item.mem;
+    item = null;
+    Popup.open(m, function () {
+      Triggers.markCollected(m.id);
+      Collection.mark(m.id);
+      SceneHint.hide();
+      Album.refresh();
+    });
+  }
+  function reset() { item = null; if (bingoEl) { bingoEl.style.display = "none"; } }
+  function isActive() { return !!item; }
+  return { init: init, spawn: spawn, position: position, update: update, draw: draw, hitTest: hitTest, collect: collect, reset: reset, isActive: isActive };
+})();
+
+/* ================= SRC: GIFTBOX（礼物盒 + 气球放飞） ================= */
+var GiftBox = (function () {
+  var item = null; /* { x, y, balloons: [{x,y,collected,vy}] } */
+
+  function spawn(x, y) {
+    item = {
+      x: x, y: y,
+      balloons: [
+        { x: x - 20, y: y - 50, color: "#ff6b8a", collected: false, vy: 0 },
+        { x: x, y: y - 65, color: "#6bcbff", collected: false, vy: 0 },
+        { x: x + 20, y: y - 50, color: "#ffd93d", collected: false, vy: 0 }
+      ]
+    };
+  }
+  function reset() { item = null; }
+  function update(dt) {
+    if (!item) { return; }
+    item.balloons.forEach(function (b) {
+      if (b.collected && b.vy < -200) {
+        b.vy -= 100 * dt; /* 往上飞 */
+        b.y += b.vy * dt;
+      }
+    });
+  }
+  function draw(ctx) {
+    if (!item) { return; }
+    if (!Camera.inView(item.x, item.y, 100)) { return; }
+    /* 画礼物盒 */
+    var c = Camera.toCanvas(item.x, item.y);
+    var img = Assets.image("gift_box");
+    if (img) {
+      ctx.drawImage(img, c.x - 30, c.y - 30, 60, 60);
+    } else {
+      ctx.fillStyle = "#ff6b6b";
+      ctx.fillRect(c.x - 20, c.y - 20, 40, 40);
+    }
+    /* 画气球（像素风 + 高光） */
+    item.balloons.forEach(function (b) {
+      if (b.collected && b.y < -100) { return; }
+      var bc = Camera.toCanvas(b.x, b.y);
+      var alpha = b.collected ? Math.max(0, 1 + b.y / 200) : 1;
+      ctx.globalAlpha = alpha;
+      /* 气球线 */
+      ctx.strokeStyle = "#999";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(c.x, c.y - 20);
+      ctx.lineTo(bc.x, bc.y + 12);
+      ctx.stroke();
+      /* 气球本体（像素风圆） */
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(bc.x, bc.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+      /* 高光（像素风小白点） */
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.fillRect(bc.x - 4, bc.y - 5, 3, 3);
+      /* 底部小结 */
+      ctx.fillStyle = b.color;
+      ctx.fillRect(bc.x - 2, bc.y + 9, 4, 2);
+      ctx.globalAlpha = 1;
+    });
+  }
+  function hitTest(px, py) {
+    if (!item) { return false; }
+    for (var i = 0; i < item.balloons.length; i++) {
+      var b = item.balloons[i];
+      if (b.collected) { continue; }
+      var dx = px - b.x, dy = py - b.y;
+      if (dx * dx + dy * dy < 14 * 14) {
+        b.collected = true;
+        b.vy = -50; /* 开始往上飞 */
+        /* 弹出对应的小纸条图片（memory_gift_balloon_01、02、03） */
+        var imgs = ["memory_gift_balloon_01", "memory_gift_balloon_02", "memory_gift_balloon_03"];
+        if (imgs[i] && Assets.image(imgs[i])) {
+          /* 创建一个临时的 memory 对象，只显示这一张图片 */
+          var tempMem = {
+            id: "temp_gift_" + i,
+            content: {
+              title: "小纸条",
+              lines: [],
+              images: [imgs[i]]
+            },
+            presentation: {
+              template: "pink",
+              icon: "note"
+            }
+          };
+          Popup.open(tempMem, function () {
+            /* 关掉弹窗后，检查是不是所有气球都点完了 */
+            if (GiftBox.allCollected()) {
+              GiftBox.reset();
+              Triggers.markCollected("memory_gift");
+              Collection.mark("memory_gift");
+              Album.refresh();
+              Dialogue.resume();
+            }
+          });
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+  function allCollected() {
+    if (!item) { return true; }
+    return item.balloons.every(function (b) { return b.collected; });
+  }
+  function focusPos() {
+    /* 返回礼物盒位置（用于方向箭头引导） */
+    if (!item) { return null; }
+    if (allCollected()) { return null; }
+    return { x: item.x, y: item.y };
+  }
+  return { spawn: spawn, reset: reset, update: update, draw: draw, hitTest: hitTest, allCollected: allCollected, focusPos: focusPos };
+})();
+
+/* 程序化记忆小图标（相册网格里没有素材图时也用这个兜底） */
+function drawMemoryIcon(ctx, mem, cx, cy) {
+  var icon = (mem && mem.presentation) ? mem.presentation.icon : mem;
+  cx = (typeof cx === "number") ? cx : 32;
+  cy = (typeof cy === "number") ? cy : 32;
+  ctx.fillStyle = "#171a26"; ctx.fillRect(cx - 32, cy - 32, 64, 64);
+  if (icon === "chat") {
+    /* 小对话框图标 */
+    ctx.fillStyle = "#eef3f7"; ctx.fillRect(cx - 22, cy - 16, 44, 30);
+    ctx.fillStyle = "#5c8fb5"; ctx.fillRect(cx - 22, cy - 16, 44, 6);
+    ctx.fillStyle = "#9fb9cd"; ctx.fillRect(cx - 16, cy - 6, 32, 2); ctx.fillRect(cx - 16, cy + 2, 24, 2);
+    ctx.fillStyle = "#5c8fb5"; ctx.fillRect(cx - 8, cy + 14, 10, 10);
+  } else if (icon === "photo") {
+    /* 小照片图标 */
+    ctx.fillStyle = "#f4c9a0"; ctx.fillRect(cx - 22, cy - 16, 44, 32);
+    ctx.fillStyle = "#d98e6a"; ctx.fillRect(cx - 22, cy - 16, 44, 6);
+    ctx.fillStyle = "#6b9e4f"; ctx.fillRect(cx - 12, cy - 2, 8, 6); ctx.fillRect(cx + 4, cy - 2, 10, 6);
+    ctx.fillStyle = "#8fc8e8"; ctx.fillRect(cx - 10, cy + 10, 10, 6); ctx.fillRect(cx + 4, cy + 8, 12, 8);
+  } else {
+    /* 桃子 */
+    for (var yy = 0; yy < 28; yy++) {
+      var t = (yy - 13) / 13;
+      var w = Math.round(13 * Math.sqrt(Math.max(0, 1 - t * t)));
+      ctx.fillStyle = yy < 6 ? "#ffd9a0" : (yy < 20 ? "#f7b267" : "#e8934a");
+      ctx.fillRect(cx - w, cy - 14 + yy, w * 2, 1);
+    }
+    ctx.fillStyle = "#d98e4a"; ctx.fillRect(cx - 1, cy - 12, 2, 24);
+    ctx.fillStyle = "#7a4a21"; ctx.fillRect(cx - 1, cy - 20, 4, 6);
+    ctx.fillStyle = "#6b9e4f"; ctx.fillRect(cx - 8, cy - 22, 12, 4);
+    ctx.fillStyle = "#4a7a36"; ctx.fillRect(cx - 8, cy - 21, 2, 4);
+  }
+}
+
+/* ================= SRC: POPUP（弹窗控制器 + 模板注册表：内容与长相分离，模板可扩展） ================= */
+var Popup = (function () {
+  var root, onCloseCb = null;
+  var templates = {};
+
+  function init() {
+    root = document.getElementById("popup");
+    document.getElementById("pclose").addEventListener("click", close);
+  }
+
+  /* 模板注册表：表现层可扩展。以后加"卡片""多图翻页""动画+文字"等，
+     只需 Popup.registerTemplate("gallery", renderer)，开合/回调/触发逻辑零改动。 */
+  function registerTemplate(name, renderer) { templates[name] = renderer; }
+
+  function open(memory, onClose) {
+    var tpl = templates[memory.presentation.template] || templates["default"];
+    tpl(root, memory);
+    onCloseCb = onClose || null;
+    root.classList.remove("hidden");
+    AudioManager.popupOpen();
+  }
+  function close() {
+    if (!root.classList.contains("hidden")) {
+      root.classList.add("hidden");
+      AudioManager.popupClose();
+      /* 停掉弹窗里所有的视频和音频 */
+      var videos = root.querySelectorAll("video");
+      videos.forEach(function(v) { v.pause(); v.currentTime = 0; });
+      var audios = root.querySelectorAll("audio");
+      audios.forEach(function(a) { a.pause(); a.currentTime = 0; });
+      var cb = onCloseCb; onCloseCb = null;
+      if (cb) { cb(); }
+    }
+  }
+  function isOpen() { return root && !root.classList.contains("hidden"); }
+  function reset() { if (root) { root.classList.add("hidden"); } onCloseCb = null; }
+  return { init: init, registerTemplate: registerTemplate, open: open, close: close, isOpen: isOpen, reset: reset };
+})();
+
+/* 默认模板：图标/照片槽 + 信的原句（占位视觉，之后可换皮肤）。真实照片有素材就显示，没有就占位。 */
+Popup.registerTemplate("default", function (root, memory) {
+  var titleEl = root.querySelector(".ptitle span");
+  titleEl.textContent = memory.content.title;
+  var box = root.querySelector("#ptpl");
+  box.innerHTML = "";
+
+  /* 循环显示所有的照片 */
+  if (memory.content.images && memory.content.images.length) {
+    memory.content.images.forEach(function(imgRef) {
+      var img = Assets.image(imgRef);
+      var slot = document.createElement("div");
+      slot.className = "pimg";
+      if (img) {
+        var im = document.createElement("img");
+        im.src = img.src;
+        im.className = "pimg-real";
+        slot.appendChild(im);
+      } else {
+        var cv = document.createElement("canvas");
+        cv.width = 64; cv.height = 64;
+        cv.className = "picon";
+        drawMemoryIcon(cv.getContext("2d"), memory.presentation.icon);
+        slot.appendChild(cv);
+        var lab = document.createElement("span");
+        lab.textContent = "照片占位";
+        slot.appendChild(lab);
+      }
+      box.appendChild(slot);
+    });
+  } else {
+    /* 没有照片，显示占位 */
+    var slot = document.createElement("div");
+    slot.className = "pimg";
+    var cv = document.createElement("canvas");
+    cv.width = 64; cv.height = 64;
+    cv.className = "picon";
+    drawMemoryIcon(cv.getContext("2d"), memory.presentation.icon);
+    slot.appendChild(cv);
+    var lab = document.createElement("span");
+    lab.textContent = "照片占位";
+    slot.appendChild(lab);
+    box.appendChild(slot);
+    var note = document.createElement("div");
+    note.className = "pimgnote";
+    note.textContent = memory.presentation.placeholderNote || "PLACEHOLDER：这里放一张那时候的照片";
+    box.appendChild(note);
+  }
+  var lines = document.createElement("div");
+  lines.className = "plines";
+  lines.innerHTML = memory.content.lines.join("<br>");
+  box.appendChild(lines);
+});
+
+/* 粉色照片卡片模板：淡粉底，上面照片（可切换），下面一句话，右上角小叉 */
+Popup.registerTemplate("pink", function (root, memory) {
+  var titleEl = root.querySelector(".ptitle span");
+  titleEl.textContent = memory.content.title;
+  var box = root.querySelector("#ptpl");
+  box.innerHTML = "";
+  box.style.background = "#ffffff";
+  box.style.border = "2px solid #f4a7b9";
+  box.style.borderRadius = "8px";
+  box.style.padding = "12px";
+
+  var idx = 0;
+  var imgs = memory.content.images || [];
+  var video = memory.content.video; /* 新增：视频支持 */
+
+  var imgBox = document.createElement("div");
+  imgBox.style.cssText = "text-align:center;margin-bottom:10px;";
+
+  /* 新增：如果有视频，就显示视频 */
+  if (video) {
+    var vid = document.createElement("video");
+    vid.src = video;
+    vid.style.cssText = "width:100%;border:4px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.15);display:block;";
+    vid.controls = true;
+    vid.autoplay = true;
+    vid.loop = true;
+    vid.muted = false;
+    imgBox.appendChild(vid);
+  } else {
+    var im = document.createElement("img");
+    im.style.cssText = "width:100%;border:4px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.15);display:block;";
+    function show() {
+      if (imgs.length) {
+        var a = Assets.image(imgs[idx]);
+        if (a) { im.src = a.src; }
+      }
+    }
+    show();
+    imgBox.appendChild(im);
+
+    if (imgs.length > 1) {
+      var toggle = document.createElement("div");
+      toggle.style.cssText = "text-align:center;margin-top:6px;font-family:monospace;font-size:11px;color:#d4708a;cursor:pointer;";
+      toggle.textContent = "下一张 ›";
+      toggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        idx = (idx + 1) % imgs.length;
+        show();
+      });
+      imgBox.appendChild(toggle);
+    }
+  }
+  box.appendChild(imgBox);
+
+  var lines = document.createElement("div");
+  lines.style.cssText = "font-family:monospace;color:#8a4a5e;font-size:13px;line-height:1.6;text-align:center;";
+  lines.innerHTML = memory.content.lines.join("<br>");
+  box.appendChild(lines);
+
+  /* 自动播放音频（如果有，延迟500ms等图片先显示） */
+  if (memory.content.audio) {
+    setTimeout(function() {
+      var audio = new Audio(memory.content.audio);
+      audio.volume = 0.8;
+      audio.play().catch(function(e) { console.log("audio play error:", e); });
+    }, 500);
+  }
+});
+
+/* 播放器模板：老式语音播放器界面，点按钮放语音 */
+Popup.registerTemplate("player", function (root, memory) {
+  var titleEl = root.querySelector(".ptitle span");
+  titleEl.textContent = memory.content.title || "语音消息";
+  var box = root.querySelector("#ptpl");
+  box.innerHTML = "";
+  box.style.background = "transparent";
+  box.style.border = "none";
+  box.style.borderRadius = "0";
+  box.style.padding = "0";
+
+  /* 播放器背景图 */
+  var imgRef = memory.content.images && memory.content.images.length ? memory.content.images[0] : null;
+  var img = imgRef ? Assets.image(imgRef) : null;
+  if (img) {
+    var im = document.createElement("img");
+    im.src = img.src;
+    im.style.cssText = "width:100%;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.4);display:block;";
+    box.appendChild(im);
+  }
+
+  /* 播放按钮 + 进度条 */
+  var audioRef = memory.content.audio || null;
+  if (audioRef) {
+    var audio = new Audio(audioRef);
+    var btn = document.createElement("div");
+    btn.style.cssText = "position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;z-index:2;border:2px solid #fff;";
+    btn.textContent = "▶";
+    var playing = false;
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (playing) {
+        audio.pause();
+        btn.textContent = "▶";
+        playing = false;
+      } else {
+        audio.play();
+        btn.textContent = "⏸";
+        playing = true;
+      }
+    });
+    audio.addEventListener("ended", function () {
+      btn.textContent = "▶";
+      playing = false;
+    });
+
+    /* 进度条 */
+    var bar = document.createElement("div");
+    bar.style.cssText = "position:absolute;left:50%;top:52%;transform:translateX(-50%);width:60%;height:4px;background:rgba(255,255,255,.3);border-radius:2px;z-index:2;overflow:hidden;";
+    var fill = document.createElement("div");
+    fill.style.cssText = "height:100%;width:0%;background:#fff;border-radius:2px;transition:width 0.2s;";
+    bar.appendChild(fill);
+    audio.addEventListener("timeupdate", function () {
+      if (audio.duration) {
+        fill.style.width = (audio.currentTime / audio.duration * 100) + "%";
+      }
+    });
+
+    /* 时间显示 */
+    var timeEl = document.createElement("div");
+    timeEl.style.cssText = "position:absolute;left:50%;top:56%;transform:translateX(-50%);color:#fff;font-size:11px;font-family:monospace;z-index:2;text-shadow:1px 1px 0 #000;";
+    timeEl.textContent = "0:00 / 0:00";
+    audio.addEventListener("loadedmetadata", function () {
+      timeEl.textContent = "0:00 / " + Math.floor(audio.duration) + "s";
+    });
+    audio.addEventListener("timeupdate", function () {
+      timeEl.textContent = Math.floor(audio.currentTime) + "s / " + Math.floor(audio.duration || 0) + "s";
+    });
+
+    box.style.position = "relative";
+    box.appendChild(btn);
+    box.appendChild(bar);
+    box.appendChild(timeEl);
+  }
+});
+
+/* 程序化兜底图标统一定义在 MEMORY DROP 段（drawMemoryIcon(ctx, memOrKind, cx, cy)），
+   弹窗/掉落/相册共用，避免两处重复定义互相覆盖。 */
+
+/* ================= SRC: BUBBLE（小猫的气泡提示：镜头坐标定位） ================= */
+var Bubble = (function () {
+  var el, hideAt = 0, tx = null, ty = null;
+  function init() { el = document.getElementById("catbubble"); }
+  function show(text, x, y, ms, type) {
+    if (!el) { return; }
+    el.textContent = text;
+    el.classList.add("show");
+    /* 区分类型：cat（小猫说的，浅蓝色）/ item（物品说的，浅米色） */
+    if (type === "item") { el.classList.add("bubble-item"); } else { el.classList.remove("bubble-item"); }
+    if (typeof x === "number" && typeof y === "number") { tx = x; ty = y; } else { tx = null; ty = null; }
+    hideAt = performance.now() + (ms || 3000);
+    AudioManager.bubble();
+  }
+  function tick() {
+    if (!el || !el.classList.contains("show")) { return; }
+    var wx, wy;
+    if (tx !== null && ty !== null) {
+      /* 指定了世界坐标（如掉落提示）：锚定该点 */
+      wx = tx; wy = ty;
+    } else {
+      /* 默认：跟着小猫头顶移动 */
+      var p = Player.state();
+      wx = p.x; wy = p.y - 18;
+    }
+    var sp = Camera.toScreen(wx, wy);
+    el.style.left = Math.max(10, Math.min(90, sp.x * 100)) + "%";
+    el.style.top = Math.max(8, Math.min(82, sp.y * 100)) + "%";
+    if (performance.now() > hideAt) { el.classList.remove("show"); }
+  }
+  function hide() { if (el) { el.classList.remove("show"); } }
+  return { init: init, show: show, tick: tick, hide: hide };
+})();
+
+/* ================= SRC: HOTSPOTS（画面热区：可点击物件 + 对白 + 照片浮层） ================= */
+var Hotspots = (function () {
+  var collected = {};
+  var current = null;
+  var focus = null; /* 信件暂停时，只强闪这一个热区 */
+  var pop, hsinner, hstext, hsclose, hsphoto, arrow;
+
+  function list() {
+    var all = SCENES.classroom.data.hotspots || [];
+    var curScene = MapRenderer.currentAssetId;
+    /* 只返回当前场景匹配的热区 */
+    return all.filter(function (hs) {
+      return hs.scene === curScene;
+    });
+  }
+  function init() {
+    pop = document.getElementById("hotspotpop");
+    hsinner = document.getElementById("hsinner");
+    hstext = document.getElementById("hstext");
+    hsclose = document.getElementById("hsclose");
+    hsphoto = document.getElementById("hsphoto");
+    arrow = document.getElementById("hsarrow");
+    hsclose.addEventListener("click", function (e) { e.stopPropagation(); closeDialog(); });
+    pop.addEventListener("click", function (e) { e.stopPropagation(); });
+  }
+  function isCollected(id) { return !!collected[id]; }
+  function get(id) {
+    for (var i = 0; i < list().length; i++) { if (list()[i].id === id) { return list()[i]; } }
+    return null;
+  }
+  function highlightOnly(id) { focus = id; }
+  function focusPos() {
+    /* 返回当前 focus 热区的中心世界坐标；无 focus 时返回 null */
+    if (!focus) { return null; }
+    var hs = list().find(function (h) { return h.id === focus; });
+    if (!hs) { return null; }
+    return { x: hs.x + hs.w / 2, y: hs.y + hs.h / 2 };
+  }
+  function allCollected() {
+    /* 检查所有 memory 是不是都收集了（不是只检查当前场景的） */
+    for (var mid in MEMORIES) {
+      if (!Collection.has(mid)) { return false; }
+    }
+    return true;
+  }
+  function draw(ctx, time) {
+    /* 掉落物出现时，隐藏重叠热区的闪光点（掉落物优先级最高） */
+    var dropPos = MemoryDrop.position();
+    var dropActive = MemoryDrop.isActive();
+    var DROP_RADIUS = 30; /* 掉落物周围 30 像素内的热区闪光点都隐藏 */
+
+    list().forEach(function (hs) {
+      var isFocus = (focus === hs.id);
+      /* 纯对白（类型1）不画闪光点 */
+      if (!hs.memory) { return; }
+      var isRequired = hs.required; /* 必选项 */
+      /* 已收集的热区，不画闪光点 */
+      if (collected[hs.id]) { return; }
+      /* 计算小猫和热区的距离 */
+      var playerPos = Player.state();
+      var hcx = hs.x + hs.w / 2, hcy = hs.y + hs.h / 2;
+      var dx = hcx - playerPos.x, dy = hcy - playerPos.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      var NEAR_RADIUS = 80; /* 小猫靠近的半径（改大一点） */
+      /* 必选项：闪光点一直闪（不管小猫有没有靠近）；可选项：只有小猫靠近的时候才闪 */
+      if (!isRequired && dist > NEAR_RADIUS && !isFocus) { return; } /* 可选项，小猫没靠近，且不是 focus 模式，不画闪光点 */
+
+      /* 检查是否和掉落物重叠（重叠则隐藏闪光点） */
+      if (dropActive && !isFocus) {
+        if (dist < DROP_RADIUS + Math.max(hs.w, hs.h) / 2) { return; } /* 重叠则不画闪光点 */
+      }
+
+      var hcx = hs.x + hs.w / 2, hcy = hs.y + hs.h / 2;
+      if (!Camera.inView(hcx, hcy, hs.w)) { return; }   /* 不在镜头内不画 */
+      var speed = isFocus ? 0.9 : 1.6;
+      var phase = (time + (hs.x % 7)) % speed;
+      if (phase < speed * 0.6) {
+        var tl = Camera.toCanvas(hs.x, hs.y), br = Camera.toCanvas(hs.x + hs.w, hs.y + hs.h);
+        var cp = Camera.toCanvas(hcx, hcy);
+        var sc = Math.max(0.5, (br.x - tl.x) / Math.max(1, hs.w));
+        var cx = cp.x, cy = cp.y;
+        var a = 1 - phase / (speed * 0.6);
+        ctx.save();
+        ctx.globalAlpha = a * (isFocus ? 0.8 : (isRequired ? 0.7 : 0.5));
+        /* 必选项用粉色，可选项用黄色 */
+        var fillColor = (isFocus || isRequired) ? "#ffd0e0" : "#ffe9a3";
+        var fillInner = (isFocus || isRequired) ? "#fff0f4" : "#fff3c4";
+        ctx.fillStyle = fillColor;
+        ctx.beginPath(); ctx.arc(cx, cy, (isFocus ? 20 : (isRequired ? 18 : 14)) * sc, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 0.8 + a * 0.2;
+        ctx.fillStyle = fillInner;
+        var s = ((isFocus ? 6 : (isRequired ? 5 : 4)) + a * (isFocus ? 3 : (isRequired ? 2.5 : 2))) * sc;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s * 0.35, cy - s * 0.35);
+        ctx.lineTo(cx + s, cy); ctx.lineTo(cx + s * 0.35, cy + s * 0.35);
+        ctx.lineTo(cx, cy + s); ctx.lineTo(cx - s * 0.35, cy + s * 0.35);
+        ctx.lineTo(cx - s, cy); ctx.lineTo(cx - s * 0.35, cy - s * 0.35);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    });
+    if (allCollected()) {
+      ctx.save();
+      ctx.globalAlpha = 0.5 + Math.sin(time * 3) * 0.3;
+      ctx.fillStyle = "#b8e986";
+      ctx.font = "10px monospace";
+      ctx.fillText("→ 出门", 24, 250);
+      ctx.restore();
+    }
+  }
+  function hitTest(x, y) {
+    var PAD = 16; /* 手机端手指点不准，热区外扩 16px */
+    /* 先测有 memory 的热区（可探索热区），优先级更高 */
+    for (var i = 0; i < list().length; i++) {
+      var hs = list()[i];
+      if (focus && hs.id !== focus) { continue; }
+      if (!hs.memory) { continue; } /* 跳过纯对白，先测有 memory 的热区 */
+      if (x >= hs.x - PAD && x <= hs.x + hs.w + PAD && y >= hs.y - PAD && y <= hs.y + hs.h + PAD) { return hs; }
+    }
+    /* 再测没有 memory 的热区（纯对白） */
+    for (var i = 0; i < list().length; i++) {
+      var hs = list()[i];
+      if (focus && hs.id !== focus) { continue; }
+      if (hs.memory) { continue; } /* 跳过有 memory 的热区，再测纯对白 */
+      if (x >= hs.x - PAD && x <= hs.x + hs.w + PAD && y >= hs.y - PAD && y <= hs.y + hs.h + PAD) { return hs; }
+    }
+    return null;
+  }
+  function hitTestRequired(x, y) {
+    var PAD = 16; /* 手机端手指点不准，热区外扩 16px */
+    for (var i = 0; i < list().length; i++) {
+      var hs = list()[i];
+      if (!hs.required) { continue; } /* 只测必选项 */
+      if (focus && hs.id !== focus) { continue; }
+      if (x >= hs.x - PAD && x <= hs.x + hs.w + PAD && y >= hs.y - PAD && y <= hs.y + hs.h + PAD) { return hs; }
+    }
+    return null;
+  }
+  function openDialog(hs) {
+    collected[hs.id] = true;
+    Collection.mark(hs.id);
+    current = hs;
+    hstext.textContent = hs.dialog;
+    if (hs.photos && hs.photos.length) {
+      var img = Assets.image(hs.photos[0]);
+      if (img) {
+        hsphoto.src = img.src;
+        hsphoto.style.display = "block";
+        hsinner.style.background = "#ffeef4";
+        hsinner.style.border = "2px solid #f4a7b9";
+      }
+      Collection.mark(hs.id);
+      Collection.mark("memory_photo");
+    } else {
+      hsphoto.style.display = "none";
+      hsinner.style.background = "#fff";
+      hsinner.style.border = "2px solid #3a2d22";
+    }
+    /* 锚定小猫头顶：每帧由 Hotspots.tick() 更新位置，不再固定居中 */
+    pop.style.bottom = "auto";
+    arrow.style.display = "none";
+    pop.style.display = "block";
+    AudioManager.bubble();
+  }
+  function forceClose() {
+    /* 切场景/清场时静默关闭，不触发 resume（避免误解锁） */
+    current = null;
+    if (pop) { pop.style.display = "none"; }
+  }
+  var autoTriggered = {}; /* 记录哪些热区已经自动弹过了 */
+  function tick() {
+    /* 每帧把对白气泡锚到当前打开的热区物品正上方（指着那个东西） */
+    if (pop && pop.style.display === "block" && current) {
+      var hcx = current.x + current.w / 2;
+      var hcy = current.y;
+      var sp = Camera.toScreen(hcx, hcy - 8);
+      pop.style.left = Math.max(4, Math.min(88, sp.x * 100)) + "%";
+      pop.style.top = Math.max(6, Math.min(70, sp.y * 100)) + "%";
+      pop.style.transform = "translate(-50%,-100%)";
+    }
+    /* 靠近自动弹对白：小猫靠近带 autoDialog 字段的热区时，自动弹一句（只弹一次） */
+    var ps = Player.state();
+    list().forEach(function (hs) {
+      if (hs.autoDialog && !autoTriggered[hs.id]) {
+        var hcx = hs.x + hs.w / 2, hcy = hs.y + hs.h / 2;
+        var dx = ps.x - hcx, dy = ps.y - hcy;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 200) { /* 靠近 200 像素内自动弹（改成 200，更容易触发） */
+          autoTriggered[hs.id] = true;
+          Bubble.show(hs.autoDialog, null, null, 5000, "item"); /* 物品对白，浅米色气泡，5 秒后消失 */
+        }
+      }
+    });
+  }
+  function closeDialog() {
+    current = null;
+    pop.style.display = "none";
+    /* 关闭弹窗后，如果是信件暂停点，解锁信件 */
+    if (focus) { Dialogue.resume(focus); }
+  }
+  function isOpen() { return !!current; }
+  function onClick(x, y) {
+    if (current) { return false; }
+    var hs = hitTest(x, y);
+    if (!hs) { return false; }
+    /* 统一处理：热区配置里有 memory 字段，就弹对应的粉色弹窗 */
+    if (hs.memory && MEMORIES[hs.memory]) {
+      collected[hs.id] = true;
+      Collection.mark(hs.id);
+      Collection.mark(hs.memory);
+      /* 暂停底部对白，让屏幕只显示弹窗内容 */
+      Dialogue.pause();
+      /* 弹一个小提示：已收集到相册 */
+      Bubble.show("已收集到相册", null, null, 2000, "item");
+      Popup.open(MEMORIES[hs.memory], function () {
+        /* 关闭弹窗后，不再恢复底部对白（保持关掉的状态） */
+        /* 检查是不是所有热区都收集完了，如果是，触发彩蛋视频 */
+        if (allCollected()) {
+          Bubble.show("你已经找到了所有的回忆", null, null, 3000, "item");
+          setTimeout(function() {
+            Ending.show();
+          }, 2000);
+        }
+      });
+      return true;
+    }
+    /* 没有 memory 字段：只弹白底对白气泡 */
+    openDialog(hs);
+    return true;
+  }
+  function reset() {
+    collected = {};
+    focus = null;
+    current = null;
+    autoTriggered = {}; /* 清空自动对白触发记录 */
+    if (pop) { pop.style.display = "none"; }
+  }
+  function markCollected(id) {
+    collected[id] = true;
+  }
+  return {
+    init: init, draw: draw, hitTest: hitTest, hitTestRequired: hitTestRequired, onClick: onClick,
+    closeDialog: closeDialog, forceClose: forceClose, tick: tick, markCollected: markCollected,
+    isOpen: isOpen, allCollected: allCollected,
+    isCollected: isCollected, get: get, highlightOnly: highlightOnly, focusPos: focusPos, reset: reset
+  };
+})();
+
+/* ================= SRC: FULL LETTER（完整的一封信，随时可读） ================= */
+var FullLetter = (function () {
+  var root;
+  function init() {
+    root = document.getElementById("fullletter");
+    document.getElementById("ftext").textContent = LETTER.fullText;
+    document.getElementById("fclose").addEventListener("click", close);
+  }
+  function show() { root.classList.remove("hidden"); }
+  function close() { root.classList.add("hidden"); }
+  function isOpen() { return root && !root.classList.contains("hidden"); }
+  return { init: init, show: show, close: close, isOpen: isOpen };
+})();
+
+/* ================= SRC: ENDING（信读完的结尾） ================= */
+var Ending = (function () {
+  var root;
+  function init() {
+    root = document.getElementById("ending");
+    document.getElementById("eLetter").addEventListener("click", function () {
+      root.classList.add("hidden");
+      FullLetter.show();
+    });
+    document.getElementById("eAgain").addEventListener("click", restart);
+  }
+  function show() {
+    root.classList.remove("hidden");
+    /* 手动播放视频，防止隐藏时自动播放 */
+    var v = document.getElementById("end_video");
+    if (v) { v.play().catch(function(){}); }
+  }
+  function isOpen() { return root && !root.classList.contains("hidden"); }
+  function restart() {
+    root.classList.add("hidden");
+    Triggers.reset();
+    Hotspots.reset();
+    MemoryDrop.reset();
+    Popup.reset();
+    Bubble.hide();
+    SceneHint.hide();
+    Collection.reset();
+    Station.applyScene("map_classroom", "5/3");
+    Player.spawn(SceneCore.spawn().x, SceneCore.spawn().y);
+    Dialogue.start();
+  }
+  return { init: init, show: show, isOpen: isOpen };
+})();
+
+/* ================= SRC: SCENE HINT（画布顶部的记忆提示条） ================= */
+var SceneHint = (function () {
+  var el;
+  function init() { el = document.getElementById("scenehint"); }
+  function show(text) {
+    if (!el) { return; }
+    el.textContent = text;
+    el.classList.remove("hidden");
+  }
+  function hide() { if (el) { el.classList.add("hidden"); } }
+  return { init: init, show: show, hide: hide };
+})();
+
+/* ================= SRC: STATION（站标：场景 asset → 第N站） ================= */
+var Station = (function () {
+  var idx = 0, aspect = "5/3";
+  function applyScene(asset, asp) {
+    if (asp) { aspect = asp; }
+    var st = CONTENT.stations.filter(function (s) { return s.asset === asset; })[0];
+    if (!st) { return; }
+    idx = st.n;
+    var el = document.getElementById("station");
+    if (el) { el.textContent = "第" + st.n + "站"; }
+  }
+  function current() { return idx; }
+  return { applyScene: applyScene, current: current };
+})();
+
+/* ================= SRC: ALBUM（相册：走过的路 + 收集的小玩意儿，可回看） ================= */
+var Album = (function () {
+  var root;
+  function init() {
+    root = document.getElementById("album");
+    document.getElementById("aclose").addEventListener("click", close);
+    document.getElementById("afull").addEventListener("click", function () {
+      close(); FullLetter.show();
+    });
+    /* tab 切换 */
+    document.getElementById("tabExplore").addEventListener("click", function () {
+      document.getElementById("tabExploreContent").style.display = "block";
+      document.getElementById("tabDialogContent").style.display = "none";
+    });
+    document.getElementById("tabDialog").addEventListener("click", function () {
+      document.getElementById("tabExploreContent").style.display = "none";
+      document.getElementById("tabDialogContent").style.display = "block";
+      refreshDialogs();
+    });
+  }
+  function open() { refresh(); root.classList.remove("hidden"); }
+  function close() { root.classList.add("hidden"); }
+  function isOpen() { return root && !root.classList.contains("hidden"); }
+  function got(id) { return Collection.has(id) || Triggers.isCollected(id); }
+  function refresh() {
+    var listEl = document.getElementById("alist");
+    listEl.innerHTML = "";
+    CONTENT.stations.forEach(function (st) {
+      var row = document.createElement("div");
+      row.className = "arow" + (Station.current() === st.n ? " cur" : "");
+      row.style.cursor = "pointer"; /* 加个手型，提示可以点击 */
+      row.style.padding = "10px"; /* 加大点击区域 */
+      row.style.margin = "5px 0";
+      var name = document.createElement("span");
+      name.className = "aname";
+      name.textContent = "第" + st.n + "站 · " + st.name;
+      var stat = document.createElement("span");
+      stat.className = "astat";
+      var all = st.memories.length && st.memories.every(got);
+      stat.textContent = Station.current() === st.n ? "现在" : (all ? "✓" : "…");
+      row.appendChild(name); row.appendChild(stat);
+      /* 点击站点，跳转到对应的位置 */
+      row.addEventListener("click", function (e) {
+        e.stopPropagation();
+        close(); /* 关闭相册 */
+        /* 跳转到对应的场景 */
+        if (st.asset) {
+          MapRenderer.switchScene(st.asset);
+          Station.applyScene(st.asset, st.aspect || "3/4");
+        }
+      });
+      listEl.appendChild(row);
+    });
+    var grid = document.getElementById("agrid");
+    grid.innerHTML = "";
+    var memIds = [];
+    CONTENT.stations.forEach(function (st) { memIds = memIds.concat(st.memories); });
+    memIds.forEach(function (id) {
+      var m = MEMORIES[id]; if (!m) { return; }
+      var has = got(id);
+      var cell = document.createElement("div");
+      cell.className = "acell" + (has ? "" : " miss");
+      cell.style.cursor = "pointer"; /* 加个手型，提示可以点击 */
+      var cv = document.createElement("canvas");
+      cv.width = 28; cv.height = 28;
+      drawMemoryIcon(cv.getContext("2d"), m, 14, 14);
+      cell.appendChild(cv);
+      var lab = document.createElement("span");
+      lab.textContent = m.content.title;
+      cell.appendChild(lab);
+      /* 点击事件：已收集的查看，未收集的跳转 */
+      cell.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (has) {
+          /* 已收集：查看照片和记忆 */
+          Popup.open(m, function () { Album.refresh(); });
+        } else {
+          /* 未收集：关闭相册，跳转到对应的场景，提示去找 */
+          close();
+          /* 找到这个 memory 属于哪个站点 */
+          var station = null;
+          CONTENT.stations.forEach(function (st) {
+            if (st.memories.indexOf(id) !== -1) {
+              station = st;
+            }
+          });
+          if (station && station.asset) {
+            MapRenderer.switchScene(station.asset);
+            Station.applyScene(station.asset, station.aspect || "3/4");
+          }
+          /* 提示：在这里找找看吧 */
+          Bubble.show("在这里找找看吧", null, null, 3000, "item");
+        }
+      });
+      grid.appendChild(cell);
+    });
+  }
+  /* 渲染对白 tab：显示所有对白，未解锁的灰显 */
+  function refreshDialogs() {
+    var listEl = document.getElementById("dlist");
+    listEl.innerHTML = "";
+    /* 从 hotspots 里找类型1（纯对白）的，按场景分组 */
+    var allHotspots = SCENES.classroom.data.hotspots || [];
+    var scenes = {};
+    allHotspots.forEach(function(h) {
+      if (!h.memory && h.dialog) { /* 类型1：纯对白 */
+        if (!scenes[h.scene]) { scenes[h.scene] = []; }
+        scenes[h.scene].push(h);
+      }
+    });
+    /* 按场景渲染 */
+    Object.keys(scenes).forEach(function(scene) {
+      var section = document.createElement("div");
+      var title = document.createElement("div");
+      title.style.cssText = "font-family:monospace;color:#8a4a5e;font-size:12px;margin-bottom:6px;";
+      title.textContent = "· " + scene;
+      section.appendChild(title);
+      scenes[scene].forEach(function(h) {
+        var item = document.createElement("div");
+        /* 判断是不是触发过了：用 collected 对象 */
+        var hasTriggered = Hotspots.isCollected(h.id);
+        if (hasTriggered) {
+          /* 已触发：正常显示原文 */
+          item.style.cssText = "background:#fff0d9;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:monospace;color:#6b4a2a;font-size:12px;line-height:1.5;";
+          item.textContent = h.dialog;
+        } else {
+          /* 未触发：显示「尚未发现」 */
+          item.style.cssText = "background:#eee;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:monospace;color:#999;font-size:12px;line-height:1.5;";
+          item.textContent = "尚未发现...";
+        }
+        section.appendChild(item);
+      });
+      listEl.appendChild(section);
+    });
+  }
+  return { init: init, open: open, close: close, isOpen: isOpen, refresh: refresh };
+})();
+
+/* ================= SRC: MAIN（启动 + 输入 + 主循环；素材注册与加载） ================= */
+(function () {
+  var canvas = document.getElementById("scene"), ctx = canvas.getContext("2d");
+  var last = 0;
+
+  /* 画布区域止于对话条上沿：竖屏镜头下地面物件（猫 / 掉落物）不被浮条盖住。
+     画布逻辑尺寸跟随屏幕比例（世界窗口 1:1 映射到画布），保证显示等比不拉伸。 */
+  function layout() {
+    var d = document.getElementById("dialogue");
+    var cw = document.getElementById("canvaswrap");
+    if (d && cw) { cw.style.bottom = d.offsetHeight + "px"; }
+    var w = cw ? cw.clientWidth : 0, h = cw ? cw.clientHeight : 0;
+    if (w && h) {
+      var a = w / h, base = 480 / 288;
+      var lw, lh;
+      if (a >= base) { lh = 288; lw = 288 * a; if (lw > 480) { lw = 480; lh = 480 / a; } }
+      else { lw = 480; lh = 480 / a; if (lh > 288) { lh = 288; lw = 288 * a; } }
+      canvas.width = Math.max(16, Math.round(lw));
+      canvas.height = Math.max(16, Math.round(lh));
+    }
+  }
+  window.addEventListener("resize", layout);
+
+  /* ---- 素材注册（语义 ID → 资源描述）。缺文件自动回退程序化占位，不动逻辑。
+         注意：每个素材的路径必须同时在 HTML 的隐藏 <img> 清单里写一行，否则发布裂图。 ---- */
+  Assets.register({ id: "map_classroom", kind: "image", src: "assets/maps/map_classroom.png" });
+  Assets.register({ id: "map_classroom_dusk", kind: "image", src: "assets/maps/map_classroom_dusk.png" });
+  Assets.register({ id: "map_train", kind: "image", src: "assets/maps/test_A_train.png" });
+  Assets.register({ id: "map_building", kind: "image", src: "assets/maps/test_B_building.png" });
+  Assets.register({ id: "map_sakura", kind: "image", src: "assets/maps/test_C_sakura.png" });
+  Assets.register({
+    id: "player_cat", kind: "sprite", src: "assets/characters/player_cat.png",
+    frameW: 256, frameH: 256, frames: [4, 4], fps: 4, size: [56, 56],
+    dirFrames: { 0: [0, 1], 1: [0, 1], 2: [6, 7], 3: [14, 15] }
+  });
+  Assets.register({ id: "memory_peach", kind: "image", src: "assets/memory-objects/memory_peach.jpg", size: [28, 28] });
+  Assets.register({ id: "memory_textbook", kind: "image", src: "assets/memory-content/memory_textbook_01.jpg", size: [32, 32] });
+  Assets.register({ id: "memory_content_peach_01", kind: "image", src: "assets/memory-content/memory_peach.jpg" });
+  Assets.register({ id: "memory_chat_01", kind: "image", src: "assets/memory-content/memory_chat_01.png", size: [128, 96] });
+  Assets.register({ id: "memory_diary_01", kind: "image", src: "assets/memory-content/memory_diary_01.png" });
+  Assets.register({ id: "player_voice_01", kind: "image", src: "assets/memory-content/player_voice_01.jpg" });
+  Assets.register({ id: "memory_textbook_01", kind: "image", src: "assets/memory-content/memory_textbook_01.jpg" });
+  Assets.register({ id: "gift_box", kind: "image", src: "assets/memory-objects/gift_box_fixed.png" });
+  Assets.register({ id: "memory_baoji_station", kind: "image", src: "assets/memory-content/memory_baoji_station.jpg" });
+  Assets.register({ id: "photo_panda", kind: "image", src: "assets/memory-content/photo_panda.jpg" });
+  Assets.register({ id: "photo_group", kind: "image", src: "assets/memory-content/photo_group.jpg" });
+  /* 新照片注册 */
+  Assets.register({ id: "memory_sunset_01", kind: "image", src: "assets/memory-content/memory_sunset_01.jpg" });
+  Assets.register({ id: "memory_sunset_02", kind: "image", src: "assets/memory-content/memory_sunset_02.jpg" });
+  Assets.register({ id: "memory_signature_01", kind: "image", src: "assets/memory-content/memory_signature_01.jpg" });
+  Assets.register({ id: "memory_signature_02", kind: "image", src: "assets/memory-content/memory_signature_02.jpg" });
+  Assets.register({ id: "memory_train_junior", kind: "image", src: "assets/memory-content/memory_train_junior.jpg" });
+  Assets.register({ id: "memory_train_senior", kind: "image", src: "assets/memory-content/memory_train_senior.jpg" });
+  Assets.register({ id: "memory_sakura_girl_01", kind: "image", src: "assets/memory-content/memory_sakura_girl_01.png" });
+  Assets.register({ id: "memory_sakura_bag_01", kind: "image", src: "assets/memory-content/memory_sakura_bag_01.jpg" });
+  Assets.register({ id: "memory_sakura_card_01", kind: "image", src: "assets/memory-content/memory_sakura_card_01.jpg" });
+  Assets.register({ id: "memory_gift_balloon_01", kind: "image", src: "assets/memory-content/memory_gift_balloon_01.png" });
+  Assets.register({ id: "memory_gift_balloon_02", kind: "image", src: "assets/memory-content/memory_gift_balloon_02.png" });
+  Assets.register({ id: "memory_gift_balloon_03", kind: "image", src: "assets/memory-content/memory_gift_balloon_03.png" });
+  Assets.register({ id: "memory_rain_umbrella", kind: "image", src: "assets/memory-content/memory_rain_umbrella.jpg" });
+  Assets.register({ id: "memory_rain_letter", kind: "image", src: "assets/memory-content/memory_rain_letter.jpg" });
+  Assets.register({ id: "memory_rice_note", kind: "image", src: "assets/memory-content/memory_rice_note.jpg" });
+  Assets.register({ id: "memory_bar_note", kind: "image", src: "assets/memory-content/memory_bar_note.jpg" });
+  Assets.register({ id: "memory_bar_phone", kind: "image", src: "assets/memory-content/memory_bar_phone.jpg" });
+  Assets.register({ id: "memory_sakura_ground_01", kind: "image", src: "assets/memory-content/memory_sakura_ground_01.jpg" });
+  Assets.register({ id: "memory_sakura_tree_01", kind: "image", src: "assets/memory-content/memory_sakura_tree_01.jpg" });
+  Assets.register({ id: "memory_sakura_tree_02", kind: "image", src: "assets/memory-content/memory_sakura_tree_02.jpg" });
+  Assets.register({ id: "memory_sakura_building", kind: "image", src: "assets/memory-content/memory_sakura_building.jpg" });
+  Assets.register({ id: "memory_sunset_02_01", kind: "image", src: "assets/memory-content/memory_sunset_02_01.jpg" });
+  /* 背景图注册 */
+  Assets.register({ id: "map_rice", kind: "image", src: "assets/maps/map_rice.png" });
+  Assets.register({ id: "map_final", kind: "image", src: "assets/maps/map_final.png" });
+  /* 预留素材槽（接口示例，后续需要时接入渲染即可，不改逻辑）：
+     effect_rain → assets/effects/effect_rain.gif（或 sprite / sequence / video / procedural）
+     ui_dialogue → assets/ui/ui_dialogue.png
+     ui_popup    → assets/ui/ui_popup.png
+     bgm_scene   → assets/audio/bgm_scene.mp3（经 AudioManager.setMusic 接入） */
+  ["map_classroom", "map_classroom_dusk", "map_rice", "map_final", "player_cat", "memory_peach", "memory_textbook", "memory_content_peach_01", "memory_chat_01", "memory_diary_01", "player_voice_01", "memory_textbook_01", "gift_box", "memory_baoji_station", "photo_panda", "photo_group", "memory_sunset_01", "memory_sunset_02", "memory_signature_01", "memory_signature_02", "memory_train_junior", "memory_train_senior", "memory_sakura_girl_01", "memory_sakura_bag_01", "memory_rain_umbrella", "memory_rain_letter", "memory_gift_balloon_01", "memory_gift_balloon_02", "memory_gift_balloon_03", "memory_sakura_tree_01", "memory_sakura_tree_02", "memory_sakura_ground_01", "memory_sakura_building", "memory_rice_note", "memory_bar_note", "memory_bar_phone"].forEach(function (id) {
+    Assets.load(id);
+  });
+
+  /* 点击换算：DOM 事件 → 画布逻辑坐标 → 世界坐标（镜头裁剪后两者不再一致） */
+  function toInternal(e) {
+    var r = canvas.getBoundingClientRect();
+    var cx = (e.clientX - r.left) / r.width * canvas.width;
+    var cy = (e.clientY - r.top) / r.height * canvas.height;
+    var w = Camera.toWorld(cx, cy);
+    return { x: w.x, y: w.y };
+  }
+  function overlayBusy() {
+    return Popup.isOpen() || FullLetter.isOpen() || Ending.isOpen() || Album.isOpen();
+  }
+
+  var KEYMAP = {
+    ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+    w: "up", s: "down", a: "left", d: "right",
+    W: "up", S: "down", A: "left", D: "right"
+  };
+  document.addEventListener("keydown", function (e) {
+    AudioManager.init();
+    if (KEYMAP[e.key]) { Player.setKey(KEYMAP[e.key], true); e.preventDefault(); return; }
+    /* 回退上一句（纠错） */
+    if (e.key === "PageUp" || e.key === "[") {
+      e.preventDefault();
+      if (overlayBusy()) { return; }
+      Dialogue.back();
+      return;
+    }
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      if (Popup.isOpen()) { Popup.close(); return; }
+      if (FullLetter.isOpen()) { FullLetter.close(); return; }
+      if (Ending.isOpen()) { return; }
+      if (Album.isOpen()) { return; }
+      Dialogue.advance();
+      layout();
+    }
+    if (e.key === "Escape") {
+      if (Popup.isOpen()) { Popup.close(); }
+      if (FullLetter.isOpen()) { FullLetter.close(); }
+      if (Album.isOpen()) { Album.close(); }
+    }
+  });
+  document.addEventListener("keyup", function (e) {
+    if (KEYMAP[e.key]) { Player.setKey(KEYMAP[e.key], false); }
+  });
+
+  canvas.addEventListener("click", function (e) {
+    AudioManager.init();
+    var p = toInternal(e);
+    /* 优先级：掉落物（必点剧情）> 礼物盒 > 必选项热区（required）> 可选项热区 > 纯对白 */
+    if (MemoryDrop.hitTest(p.x, p.y)) { MemoryDrop.collect(); return; }
+    if (GiftBox.hitTest(p.x, p.y)) {
+      /* 点击气球已经在 hitTest() 里处理了（弹出图片 + 检查是否全部点完） */
+      return;
+    }
+    /* 先测必选项热区（required: true） */
+    var hs = Hotspots.hitTestRequired(p.x, p.y);
+    if (hs) { Hotspots.onClick(p.x, p.y); return; }
+    /* 再测其他热区 */
+    if (Hotspots.onClick(p.x, p.y)) { return; }
+  });
+
+  document.getElementById("dialogue").addEventListener("click", function () {
+    AudioManager.init();
+    if (overlayBusy()) { return; }
+    Dialogue.advance();
+    layout();
+  });
+  document.getElementById("dprev").addEventListener("click", function (e) {
+    e.stopPropagation();
+    AudioManager.init();
+    if (overlayBusy()) { return; }
+    Dialogue.back();
+    layout();
+  });
+
+  var btnMute = document.getElementById("btnMute");
+  var icoOn = document.getElementById("icoOn"), icoOff = document.getElementById("icoOff");
+  var volumePanel = document.getElementById("volumePanel");
+  var sfxVolumeSlider = document.getElementById("sfxVolume");
+  var musicVolumeSlider = document.getElementById("musicVolume");
+  btnMute.addEventListener("click", function () {
+    AudioManager.init();
+    /* 弹出/隐藏音量控制面板 */
+    if (volumePanel.style.display === "none" || !volumePanel.style.display) {
+      volumePanel.style.display = "block";
+      /* 初始化滑块的值 */
+      sfxVolumeSlider.value = AudioManager.getSfxVolume() * 100;
+      musicVolumeSlider.value = AudioManager.getMusicVolume() * 100;
+    } else {
+      volumePanel.style.display = "none";
+    }
+  });
+  /* 音效滑块 */
+  sfxVolumeSlider.addEventListener("input", function () {
+    var v = parseInt(this.value) / 100;
+    AudioManager.setSfxVolume(v);
+  });
+  /* 音乐滑块 */
+  musicVolumeSlider.addEventListener("input", function () {
+    var v = parseInt(this.value) / 100;
+    AudioManager.setMusicVolume(v);
+  });
+  var btnAlbum = document.getElementById("btnAlbum");
+  var _clickCount = 0, _clickTimer = null;
+  btnAlbum.addEventListener("click", function () {
+    AudioManager.init();
+    /* 双击相册：弹出段落快速跳转输入框（测试用） */
+    _clickCount++;
+    if (_clickCount === 2) {
+      clearTimeout(_clickTimer);
+      _clickCount = 0;
+      var list = CONTENT.letter.segments.map(function (s, i) {
+        return i + ". " + s.id;
+      }).join("  ");
+      var sel = prompt("快速跳转到第几段？（0-" + (CONTENT.letter.segments.length - 1) + "）\n\n" + list);
+      if (sel !== null) {
+        var n = parseInt(sel);
+        if (!isNaN(n) && n >= 0 && n < CONTENT.letter.segments.length) {
+          window.location.hash = "#seg=" + n;
+          window.location.reload();
+        }
+      }
+      return;
+    }
+    _clickTimer = setTimeout(function () {
+      _clickCount = 0;
+      Album.open();
+    }, 250);
+  });
+
+  /* 触屏虚拟方向键（手机端） */
+  var dpadBtns = { up: "dp-up", down: "dp-down", left: "dp-left", right: "dp-right" };
+  Object.keys(dpadBtns).forEach(function (d) {
+    var b = document.getElementById(dpadBtns[d]);
+    function press(e) { e.preventDefault(); AudioManager.init(); Player.setKey(d, true); b.classList.add("active"); }
+    function release() { Player.setKey(d, false); b.classList.remove("active"); }
+    b.addEventListener("pointerdown", press);
+    b.addEventListener("pointerup", release);
+    b.addEventListener("pointercancel", release);
+    b.addEventListener("pointerleave", release);
+  });
+
+  var _inPad = false; /* 自动触发防抖：只有"走进"热区的那一刻才弹，关掉后站在原地不重开 */
+  var _startTime = Date.now(); /* 开场时间戳，1 秒内不自动触发 */
+  function loop(ts) {
+    var dt = Math.min(0.05, (ts - last) / 1000 || 0.016);
+    last = ts;
+    Player.update(dt);
+    /* 猫走进光点热区的那一刻自动触发对白（开场 1 秒内不检测，避免出生即触发） */
+    if (!Hotspots.isOpen() && (Date.now() - _startTime > 1000)) {
+      var ps = Player.state();
+      var hs = Hotspots.hitTest(ps.x, ps.y);
+      var inside = !!hs;
+      if (inside && !_inPad && hs && !Hotspots.isCollected(hs.id)) { Hotspots.onClick(ps.x, ps.y); }
+      _inPad = inside;
+    } else { _inPad = true; }
+    /* 场景触发记忆：玩家走进发光触发区 → 弹记忆弹窗（收集后提示条自动收起） */
+    var sc = Triggers.activeScene();
+    if (sc && !overlayBusy() && !Hotspots.isOpen()) {
+      var sm = MEMORIES[sc];
+      if (sm) {
+        var zr = SceneCore.zoneRect(sm.trigger.zone);
+        var pss = Player.state();
+        if (zr && pss.x >= zr.x && pss.x <= zr.x + zr.w && pss.y >= zr.y && pss.y <= zr.y + zr.h) {
+          Triggers.clearScene();
+          Popup.open(sm, function () {
+            Triggers.markCollected(sm.id);
+            Collection.mark(sm.id);
+            SceneHint.hide();
+            Album.refresh();
+          });
+        }
+      }
+    }
+    MemoryDrop.update(dt);
+    GiftBox.update(dt);
+    Bubble.tick();
+    Hotspots.tick();
+    CatDialog.update(); /* 黑猫对白系统：按场景随机弹，克制不打扰 */
+    ctx.fillStyle = "#171a26";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    MapRenderer.draw(ctx, ts / 1000, Triggers.activeScene());
+    Hotspots.draw(ctx, ts / 1000);
+    MemoryDrop.draw(ctx);
+    GiftBox.draw(ctx);
+    CharacterRenderer.draw(ctx, Player.state(), ts / 1000);
+
+    /* 方向箭头：focus 等待时，从小猫指向目标，小猫走近后自动隐藏 */
+    var arrow = document.getElementById("wayarrow");
+    var fp = Hotspots.focusPos() || GiftBox.focusPos();
+    if (fp) {
+      var ps = Player.state();
+      var dx = fp.x - ps.x, dy = fp.y - ps.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 24) {
+        /* 箭头放在小猫和目标之间 60% 的位置（靠近目标一点） */
+        var ax = ps.x + dx * 0.6;
+        var ay = ps.y + dy * 0.6;
+        var asp = Camera.toScreen(ax, ay);
+        var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        arrow.style.display = "block";
+        arrow.style.left = Math.max(6, Math.min(94, asp.x * 100)) + "%";
+        arrow.style.top = Math.max(6, Math.min(80, asp.y * 100)) + "%";
+        arrow.style.transform = "translate(-50%,-50%) rotate(" + angle + "deg)";
+      } else {
+        arrow.style.display = "none";
+      }
+    } else {
+      arrow.style.display = "none";
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  AudioManager.init();
+  layout();
+  Popup.init(); MemoryDrop.init(); Bubble.init(); Dialogue.init(); FullLetter.init(); Ending.init(); SceneHint.init(); Hotspots.init(); Station.applyScene("map_classroom", "5/3"); Album.init();
+  Player.spawn(SceneCore.spawn().x, SceneCore.spawn().y);
+  /* 开场遮罩：点击后才开始 */
+  var ov = document.getElementById("startoverlay");
+  ov.addEventListener("click", function () {
+    AudioManager.init();
+    ov.style.display = "none";
+    _startTime = Date.now(); /* 重置开场计时器，1 秒内不自动触发 */
+    Dialogue.start();
+  }, { once: true });
+  requestAnimationFrame(function (ts) { last = ts; requestAnimationFrame(loop); });
+})();
+
+
+</script>
+</body>
+</html>
