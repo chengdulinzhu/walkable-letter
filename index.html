@@ -229,6 +229,15 @@ body{
   #screen{width:min(420px,100vw);height:100vh;height:100dvh;box-shadow:0 0 0 2px #2c3247,0 0 60px rgba(0,0,0,.55);}
 }
 @media (prefers-reduced-motion: reduce){*{animation:none!important}}
+/* ===== 开屏片头 ===== */
+#splash{position:absolute;inset:0;z-index:300;background:#000;display:flex;align-items:center;justify-content:center}
+#splash video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+#splash_skip{position:absolute;top:14px;right:16px;z-index:3;cursor:pointer;font-family:monospace;font-size:14px;color:#faf3e3;background:rgba(0,0,0,.45);border:1px solid rgba(250,243,227,.5);border-radius:6px;padding:6px 12px;letter-spacing:1px}
+#splash_sound{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:3;cursor:pointer;font-family:monospace;font-size:13px;color:#faf3e3;background:rgba(0,0,0,.55);border:1px solid rgba(250,243,227,.55);border-radius:20px;padding:8px 18px;letter-spacing:1px}
+#splash_progress{position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:3;width:70%;text-align:center}
+.sp_bar{height:12px;background:rgba(0,0,0,.5);border:2px solid #3a4058;border-radius:6px;overflow:hidden}
+#sp_fill{height:100%;width:0;background:linear-gradient(90deg,#c9a876,#e0c188);transition:width .3s}
+#sp_text{font-family:monospace;font-size:12px;color:#faf3e3;letter-spacing:1px;margin-top:8px;text-shadow:0 1px 2px rgba(0,0,0,.7)}
 </style>
 </head>
 <body>
@@ -384,6 +393,16 @@ body{
     <video id="bg_video_map_escape" src="assets/maps/map_escape.mp4" loop autoplay playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:-1;"></video>
   </div>
   <!-- ===== 开场引导遮罩 ===== -->
+  <!-- ===== 开屏片头（视频播放，播完/跳过进入） ===== -->
+  <div id="splash">
+    <video id="splash_video" src="assets/splash.mp4" muted playsinline preload="auto"></video>
+    <button id="splash_skip" type="button">跳过 ›</button>
+    <button id="splash_sound" type="button">点击开启声音 🔊</button>
+    <div id="splash_progress" class="hidden">
+      <div class="sp_bar"><div id="sp_fill"></div></div>
+      <div id="sp_text">加载中 0%</div>
+    </div>
+  </div>
   <div id="startoverlay" style="position:absolute;inset:0;z-index:100;background:rgba(40,30,20,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;">
     <div style="font-family:monospace;color:#faf3e3;font-size:18px;letter-spacing:2px;text-align:center;line-height:2;">这是一封可以走进去的信<br><br>点击开始</div>
     <div style="margin-top:16px;font-size:24px;color:#faf3e3;animation:blink 1s steps(2) infinite;">▼</div>
@@ -3332,6 +3351,53 @@ var Album = (function () {
     Dialogue.start();
   }, { once: true });
   requestAnimationFrame(function (ts) { last = ts; requestAnimationFrame(loop); });
+})();
+
+/* ===== 开屏片头控制 ===== */
+(function () {
+  var v = document.getElementById("splash_video");
+  var splash = document.getElementById("splash");
+  var skip = document.getElementById("splash_skip");
+  var snd = document.getElementById("splash_sound");
+  var prog = document.getElementById("splash_progress");
+  var fill = document.getElementById("sp_fill");
+  var text = document.getElementById("sp_text");
+  var ids = ["map_classroom","map_classroom_dusk","map_rice","map_final","player_cat","memory_peach","memory_textbook","memory_content_peach_01","memory_chat_01","memory_diary_01","player_voice_01","memory_textbook_01","gift_box","memory_baoji_station","photo_panda","photo_group","memory_sunset_01","memory_sunset_02","memory_signature_01","memory_signature_02","memory_train_junior","memory_train_senior","memory_sakura_girl_01","memory_sakura_bag_01","memory_rain_umbrella","memory_rain_letter","memory_gift_balloon_01","memory_gift_balloon_02","memory_gift_balloon_03","memory_sakura_tree_01","memory_sakura_tree_02","memory_sakura_ground_01","memory_sakura_building","memory_rice_note","memory_bar_note","memory_bar_phone"];
+  var registered = ids.filter(function (id) { return Assets.has(id); });
+  var waiting = false, entered = false;
+  function readyCount() { return registered.filter(function (id) { return Assets.isLoaded(id); }).length; }
+  function allReady() { return registered.length > 0 && readyCount() >= registered.length; }
+  function enter() {
+    if (entered) return; entered = true;
+    splash.classList.add("hidden");
+  }
+  setInterval(function () {
+    var tot = registered.length, rc = readyCount();
+    var pct = tot ? Math.round(rc / tot * 100) : 100;
+    fill.style.width = pct + "%";
+    text.textContent = "加载中 " + pct + "%";
+    if (waiting && allReady()) enter();
+  }, 200);
+  v.addEventListener("ended", function () {
+    if (allReady()) enter();
+    else { waiting = true; prog.classList.remove("hidden"); }
+  });
+  skip.addEventListener("click", function () {
+    if (allReady()) { enter(); }
+    else {
+      try { v.currentTime = 0; v.pause(); } catch (e) {}
+      waiting = true;
+      prog.classList.remove("hidden");
+    }
+  });
+  snd.addEventListener("click", function () {
+    v.muted = false; v.volume = 0.8;
+    snd.style.display = "none";
+    var p = v.play();
+    if (p && p.catch) p.catch(function () {});
+  });
+  var p0 = v.play();
+  if (p0 && p0.catch) p0.catch(function () {});
 })();
 
 
