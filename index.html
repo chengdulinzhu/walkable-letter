@@ -88,7 +88,7 @@ body{
 .dinner{width:100%;margin:0 auto;position:relative;max-width:560px;padding-top:6px}
 #dtext{
   font-size:16px;line-height:1.8;letter-spacing:.4px;color:#f6efe0;
-  min-height:40px;max-height:calc(40vh - 92px);overflow-y:auto;
+  min-height:40px;max-height:calc(52vh - 92px);overflow-y:auto;
   scrollbar-width:thin;padding-left:44px;
 }
 #dbar{margin-top:8px;height:4px;background:rgba(255,255,255,.14);border-radius:2px;position:relative}
@@ -153,7 +153,7 @@ body{
   color:var(--gold);font-size:12px;padding:5px 14px;letter-spacing:1px;
   white-space:nowrap;max-width:92%;text-align:center;overflow:hidden;text-overflow:ellipsis;
 }
-#pad{position:absolute;right:85px;bottom:38%;width:56px;height:56px;z-index:6;display:none;touch-action:none;cursor:grab}
+#pad{position:absolute;right:85px;bottom:28%;width:56px;height:56px;z-index:6;display:none;touch-action:none;cursor:grab}
 #padball{position:absolute;left:0;top:0;width:56px;height:56px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.5),rgba(255,255,255,.22));
   border:1.5px solid rgba(255,255,255,.45);
@@ -233,6 +233,9 @@ body{
 #splash_pause{background:none;border:none;cursor:pointer;font-size:16px;color:#faf3e3;line-height:1;padding:0 4px;flex:0 0 auto;font-family:monospace}
 .sp_playbar{flex:1;height:6px;background:rgba(255,255,255,.25);border-radius:3px;cursor:pointer;position:relative}
 #splash_prog{position:absolute;left:0;top:0;height:100%;width:0;background:#e0c188;border-radius:3px}
+#splash_vload{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;width:62%;text-align:center}
+#sv_fill{height:100%;width:0;background:linear-gradient(90deg,#c9a876,#e0c188);transition:width .3s}
+#sv_text{font-family:monospace;font-size:12px;color:#faf3e3;letter-spacing:1px;margin-top:8px;text-shadow:0 1px 2px rgba(0,0,0,.7)}
 #splash_progress{position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:3;width:70%;text-align:center}
 .sp_bar{height:12px;background:rgba(0,0,0,.5);border:2px solid #3a4058;border-radius:6px;overflow:hidden}
 #sp_fill{height:100%;width:0;background:linear-gradient(90deg,#c9a876,#e0c188);transition:width .3s}
@@ -396,6 +399,10 @@ body{
     <video id="splash_video" src="assets/splash.mp4" muted playsinline preload="auto"></video>
     <button id="splash_skip" type="button">跳过 ›</button>
     <button id="splash_sound" type="button">点击开启声音 🔊</button>
+    <div id="splash_vload">
+      <div class="sp_bar"><div id="sv_fill"></div></div>
+      <div id="sv_text">正在加载视频 0%</div>
+    </div>
     <div id="splash_progress" class="hidden">
       <div class="sp_bar"><div id="sp_fill"></div></div>
       <div id="sp_text">加载中 0%</div>
@@ -3390,6 +3397,9 @@ var Album = (function () {
   var prog = document.getElementById("splash_progress");
   var fill = document.getElementById("sp_fill");
   var text = document.getElementById("sp_text");
+  var vload = document.getElementById("splash_vload");
+  var svFill = document.getElementById("sv_fill");
+  var svText = document.getElementById("sv_text");
   var ids = ["map_classroom","map_classroom_dusk","map_rice","map_final","player_cat","memory_peach","memory_textbook","memory_content_peach_01","memory_chat_01","memory_diary_01","player_voice_01","memory_textbook_01","gift_box","memory_baoji_station","photo_panda","photo_group","memory_sunset_01","memory_sunset_02","memory_signature_01","memory_signature_02","memory_train_junior","memory_train_senior","memory_sakura_girl_01","memory_sakura_bag_01","memory_rain_umbrella","memory_rain_letter","memory_gift_balloon_01","memory_gift_balloon_02","memory_gift_balloon_03","memory_sakura_tree_01","memory_sakura_tree_02","memory_sakura_ground_01","memory_sakura_building","memory_rice_note","memory_bar_note","memory_bar_phone"];
   var registered = ids.filter(function (id) { return Assets.has(id); });
   var waiting = false, entered = false;
@@ -3421,6 +3431,19 @@ var Album = (function () {
     var ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
     if (v.duration && isFinite(v.duration)) { v.currentTime = ratio * v.duration; }
   });
+  /* 视频加载条：视频加载期间显示居中的加载进度，视频能播后自动消失 */
+  function updVLoad() {
+    var b = v.buffered, dur = v.duration;
+    var p = 0;
+    if (dur && isFinite(dur) && b && b.length) { p = Math.min(100, Math.round(b.end(b.length - 1) / dur * 100)); }
+    svFill.style.width = p + "%";
+    svText.textContent = "正在加载视频 " + p + "%";
+  }
+  function hideVLoad() { if (vload) vload.classList.add("hidden"); }
+  v.addEventListener("progress", updVLoad);
+  v.addEventListener("canplay", hideVLoad);
+  v.addEventListener("playing", hideVLoad);
+  if (v.readyState >= 3) hideVLoad();  // 视频已可播则立即隐藏加载条
   setInterval(function () {
     var tot = registered.length, rc = readyCount();
     var pct = tot ? Math.round(rc / tot * 100) : 100;
