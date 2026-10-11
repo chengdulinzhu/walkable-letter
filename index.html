@@ -259,7 +259,10 @@ body{
       </div>
       <!-- 音量控制面板 -->
       <div id="volumePanel" style="position:absolute;top:50px;right:10px;background:#fff;border:2px solid #3a2d22;border-radius:8px;padding:10px;z-index:100;display:none;min-width:150px;">
-        <div style="font-family:monospace;font-size:12px;color:#3a2d22;margin-bottom:8px;">音量设置</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-family:monospace;font-size:12px;color:#3a2d22;">音量设置</span>
+          <button id="btnPanelMute" type="button" style="background:none;border:none;font-size:16px;cursor:pointer;padding:0;color:#3a2d22;" aria-label="静音开关">🔊</button>
+        </div>
         <div style="margin-bottom:8px;">
           <div style="font-family:monospace;font-size:10px;color:#666;margin-bottom:4px;">音效</div>
           <input type="range" id="sfxVolume" min="0" max="100" value="50" style="width:100%;">
@@ -3228,30 +3231,32 @@ var Album = (function () {
   var volumePanel = document.getElementById("volumePanel");
   var sfxVolumeSlider = document.getElementById("sfxVolume");
   var musicVolumeSlider = document.getElementById("musicVolume");
-  var _muteTimer = null;
+  function syncMuteIcon() {
+    var m = AudioManager.isMuted();
+    icoOn.classList.toggle("hidden", m);
+    icoOff.classList.toggle("hidden", !m);
+    var pm = document.getElementById("btnPanelMute");
+    if (pm) pm.textContent = m ? "🔇" : "🔊";
+  }
   btnMute.addEventListener("click", function () {
     AudioManager.init();
-    /* 双击：弹出/隐藏音量控制面板 */
-    if (_muteTimer) {
-      clearTimeout(_muteTimer); _muteTimer = null;
-      if (volumePanel.style.display === "none" || !volumePanel.style.display) {
-        volumePanel.style.display = "block";
-        sfxVolumeSlider.value = AudioManager.getSfxVolume() * 100;
-        musicVolumeSlider.value = AudioManager.getMusicVolume() * 100;
-      } else {
-        volumePanel.style.display = "none";
-      }
-      return;
-    }
-    _muteTimer = setTimeout(function () {
-      _muteTimer = null;
-      /* 单击：真正的静音开关，图标随之切换 */
-      var m = !AudioManager.isMuted();
-      AudioManager.setMuted(m);
-      icoOn.classList.toggle("hidden", m);
-      icoOff.classList.toggle("hidden", !m);
+    /* 单击：弹出/隐藏音量控制面板（含静音开关 + 音效/音乐音量调节） */
+    if (volumePanel.style.display === "none" || !volumePanel.style.display) {
+      volumePanel.style.display = "block";
+      syncMuteIcon();
+      sfxVolumeSlider.value = AudioManager.getSfxVolume() * 100;
+      musicVolumeSlider.value = AudioManager.getMusicVolume() * 100;
+    } else {
       volumePanel.style.display = "none";
-    }, 220);
+    }
+  });
+  /* 面板内静音开关 */
+  var btnPanelMute = document.getElementById("btnPanelMute");
+  if (btnPanelMute) btnPanelMute.addEventListener("click", function () {
+    AudioManager.init();
+    var m = !AudioManager.isMuted();
+    AudioManager.setMuted(m);
+    syncMuteIcon();
   });
   /* 音效滑块 */
   sfxVolumeSlider.addEventListener("input", function () {
