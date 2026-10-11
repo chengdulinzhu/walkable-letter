@@ -1399,7 +1399,17 @@ var AudioManager = (function () {
     popupOpen: function () { tone(660, 0.08, "triangle", 0.06); tone(880, 0.1, "triangle", 0.05, 0.07); },
     popupClose: function () { tone(440, 0.07, "triangle", 0.05); },
     bubble: function () { tone(520, 0.09, "sine", 0.04); tone(740, 0.1, "sine", 0.04, 0.1); },
-    setMuted: function (m) { muted = !!m; },
+    setMuted: function (m) {
+      muted = !!m;
+      /* 静音/取消静音时，同步暂停或恢复所有音乐槽位 */
+      for (var slot in this.music) {
+        var a = this.music[slot];
+        if (a) {
+          if (muted) { a.pause(); }
+          else { var p = a.play(); if (p && p.catch) { p.catch(function () {}); } }
+        }
+      }
+    },
     isMuted: function () { return muted; },
     /* 调音量 */
     setSfxVolume: function (v) { sfxVolume = v; },
@@ -3218,17 +3228,30 @@ var Album = (function () {
   var volumePanel = document.getElementById("volumePanel");
   var sfxVolumeSlider = document.getElementById("sfxVolume");
   var musicVolumeSlider = document.getElementById("musicVolume");
+  var _muteTimer = null;
   btnMute.addEventListener("click", function () {
     AudioManager.init();
-    /* 弹出/隐藏音量控制面板 */
-    if (volumePanel.style.display === "none" || !volumePanel.style.display) {
-      volumePanel.style.display = "block";
-      /* 初始化滑块的值 */
-      sfxVolumeSlider.value = AudioManager.getSfxVolume() * 100;
-      musicVolumeSlider.value = AudioManager.getMusicVolume() * 100;
-    } else {
-      volumePanel.style.display = "none";
+    /* 双击：弹出/隐藏音量控制面板 */
+    if (_muteTimer) {
+      clearTimeout(_muteTimer); _muteTimer = null;
+      if (volumePanel.style.display === "none" || !volumePanel.style.display) {
+        volumePanel.style.display = "block";
+        sfxVolumeSlider.value = AudioManager.getSfxVolume() * 100;
+        musicVolumeSlider.value = AudioManager.getMusicVolume() * 100;
+      } else {
+        volumePanel.style.display = "none";
+      }
+      return;
     }
+    _muteTimer = setTimeout(function () {
+      _muteTimer = null;
+      /* 单击：真正的静音开关，图标随之切换 */
+      var m = !AudioManager.isMuted();
+      AudioManager.setMuted(m);
+      icoOn.classList.toggle("hidden", m);
+      icoOff.classList.toggle("hidden", !m);
+      volumePanel.style.display = "none";
+    }, 220);
   });
   /* 音效滑块 */
   sfxVolumeSlider.addEventListener("input", function () {
