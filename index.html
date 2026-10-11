@@ -1436,6 +1436,26 @@ var AudioManager = (function () {
       a.loop = !!loop; a.src = url; a.volume = musicVolume;
       if (!muted) { var p = a.play(); if (p && p.catch) { p.catch(function () {}); } }
     },
+    /* 闪避（ducking）：其他声音（记忆语音/内部视频）出现时，背景音乐自动渐弱；结束恢复 */
+    _duckTarget: null, _rampT: null,
+    _ramp: function () {
+      var self = this;
+      if (self._rampT) clearInterval(self._rampT);
+      self._rampT = setInterval(function () {
+        var done = true;
+        for (var slot in self.music) {
+          var a = self.music[slot];
+          if (a) {
+            var diff = self._duckTarget - a.volume;
+            if (Math.abs(diff) < 0.01) { a.volume = self._duckTarget; }
+            else { a.volume = a.volume + diff * 0.22; done = false; }
+          }
+        }
+        if (done && self._rampT) { clearInterval(self._rampT); self._rampT = null; }
+      }, 50);
+    },
+    duck: function () { this._duckTarget = 0.12; this._ramp(); },
+    unduck: function () { this._duckTarget = musicVolume; this._ramp(); },
     /* 保留曲目（不擅自使用）：《总有一天你会出现在你身边》——之后由你决定放开场 / 结尾 / 主题。 */
     reservedSong: "《总有一天你会出现在你身边》"
   };
@@ -1492,13 +1512,16 @@ var MapRenderer = (function () {
       var el = document.getElementById("bg_video_" + vid);
       if (el) { el.pause(); }
     });
-    /* 视频背景：切换到下雨/逃离场景时手动播放 */
+    /* 视频背景：切换到下雨/逃离场景时手动播放；这些视频有声音，播放时背景音乐自动渐弱 */
     if (assetId === "map_rain" || assetId === "map_escape") {
       var video = document.getElementById("bg_video_" + assetId);
       if (video) {
         video.volume = 0.02;
         video.play().catch(function(e) { console.log("video play error:", e); });
+        AudioManager.duck();
       }
+    } else {
+      AudioManager.unduck();
     }
   }
 
@@ -2438,12 +2461,14 @@ Popup.registerTemplate("pink", function (root, memory) {
   lines.innerHTML = memory.content.lines.join("<br>");
   box.appendChild(lines);
 
-  /* 自动播放音频（如果有，延迟500ms等图片先显示） */
+  /* 自动播放音频（如果有，延迟500ms等图片先显示）；播放时背景音乐自动渐弱，播完恢复 */
   if (memory.content.audio) {
     setTimeout(function() {
       var audio = new Audio(memory.content.audio);
       audio.volume = 0.8;
-      audio.play().catch(function(e) { console.log("audio play error:", e); });
+      AudioManager.duck();
+      audio.play().catch(function(e) { console.log("audio play error:", e); AudioManager.unduck(); });
+      audio.addEventListener("ended", function () { AudioManager.unduck(); });
     }, 500);
   }
 });
@@ -3412,6 +3437,8 @@ var Album = (function () {
     AudioManager.init();
     ov.style.display = "none";
     _startTime = Date.now(); /* 重置开场计时器，1 秒内不自动触发 */
+    /* 进入游戏：铺一条背景音乐（从头到尾） */
+    AudioManager.setMusic("theme", "assets/audio/bgm_theme.mp3", true);
     Dialogue.start();
   }, { once: true });
   requestAnimationFrame(function (ts) { last = ts; requestAnimationFrame(loop); });
