@@ -339,13 +339,13 @@ body{
   </div>
   <!-- ===== 图片路径清单（供发布链路扫描上传，视觉不可见，勿删） ===== -->
   <div style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
-    <img src="assets/maps/map_classroom.png" alt="">
-    <img src="assets/maps/map_classroom_dusk.png" alt="">
-    <img src="assets/maps/map_rice.png" alt="">
-    <img src="assets/maps/map_final.png" alt="">
-    <img src="assets/maps/test_A_train.png" alt="">
-    <img src="assets/maps/test_B_building.png" alt="">
-    <img src="assets/maps/test_C_sakura.png" alt="">
+    <img src="assets/maps/map_classroom.webp" alt="">
+    <img src="assets/maps/map_classroom_dusk.webp" alt="">
+    <img src="assets/maps/map_rice.webp" alt="">
+    <img src="assets/maps/map_final.webp" alt="">
+    <img src="assets/maps/test_A_train.webp" alt="">
+    <img src="assets/maps/test_B_building.webp" alt="">
+    <img src="assets/maps/test_C_sakura.webp" alt="">
     <img src="assets/characters/player_cat.png" alt="">
     <img src="assets/memory-objects/memory_peach.jpg" alt="">
     <img src="assets/memory-content/memory_peach.jpg" alt="">
@@ -1013,7 +1013,7 @@ var CONTENT = {
       id: "map_classroom",
       name: "教室",
       visual: {
-        assetId: "map_classroom",   // assets/maps/map_classroom.png；没有就画程序化瓦片
+        assetId: "map_classroom",   // assets/maps/map_classroom.webp；没有就画程序化瓦片
         tileW: 16, tileH: 16,
         gridW: 30, gridH: 18
       },
@@ -3047,11 +3047,11 @@ var Album = (function () {
 
   /* ---- 素材注册（语义 ID → 资源描述）。缺文件自动回退程序化占位，不动逻辑。
          注意：每个素材的路径必须同时在 HTML 的隐藏 <img> 清单里写一行，否则发布裂图。 ---- */
-  Assets.register({ id: "map_classroom", kind: "image", src: "assets/maps/map_classroom.png" });
-  Assets.register({ id: "map_classroom_dusk", kind: "image", src: "assets/maps/map_classroom_dusk.png" });
-  Assets.register({ id: "map_train", kind: "image", src: "assets/maps/test_A_train.png" });
-  Assets.register({ id: "map_building", kind: "image", src: "assets/maps/test_B_building.png" });
-  Assets.register({ id: "map_sakura", kind: "image", src: "assets/maps/test_C_sakura.png" });
+  Assets.register({ id: "map_classroom", kind: "image", src: "assets/maps/map_classroom.webp" });
+  Assets.register({ id: "map_classroom_dusk", kind: "image", src: "assets/maps/map_classroom_dusk.webp" });
+  Assets.register({ id: "map_train", kind: "image", src: "assets/maps/test_A_train.webp" });
+  Assets.register({ id: "map_building", kind: "image", src: "assets/maps/test_B_building.webp" });
+  Assets.register({ id: "map_sakura", kind: "image", src: "assets/maps/test_C_sakura.webp" });
   Assets.register({
     id: "player_cat", kind: "sprite", src: "assets/characters/player_cat.png",
     frameW: 256, frameH: 256, frames: [4, 4], fps: 4, size: [56, 56],
@@ -3092,8 +3092,8 @@ var Album = (function () {
   Assets.register({ id: "memory_sakura_building", kind: "image", src: "assets/memory-content/memory_sakura_building.jpg" });
   Assets.register({ id: "memory_sunset_02_01", kind: "image", src: "assets/memory-content/memory_sunset_02_01.jpg" });
   /* 背景图注册 */
-  Assets.register({ id: "map_rice", kind: "image", src: "assets/maps/map_rice.png" });
-  Assets.register({ id: "map_final", kind: "image", src: "assets/maps/map_final.png" });
+  Assets.register({ id: "map_rice", kind: "image", src: "assets/maps/map_rice.webp" });
+  Assets.register({ id: "map_final", kind: "image", src: "assets/maps/map_final.webp" });
   /* 预留素材槽（接口示例，后续需要时接入渲染即可，不改逻辑）：
      effect_rain → assets/effects/effect_rain.gif（或 sprite / sequence / video / procedural）
      ui_dialogue → assets/ui/ui_dialogue.png
