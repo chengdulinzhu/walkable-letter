@@ -387,8 +387,8 @@ body{
     <img src="assets/memory-content/memory_sunset_02_01.jpg" alt="">
     <img src="assets/memory-content/photo_panda.jpg" alt="">
     <img src="assets/memory-content/photo_group.jpg" alt="">
-    <video id="bg_video_map_rain" src="assets/maps/map_rain.mp4" loop autoplay playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:-1;"></video>
-    <video id="bg_video_map_escape" src="assets/maps/map_escape.mp4" loop autoplay playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:-1;"></video>
+    <video id="bg_video_map_rain" src="assets/maps/map_rain.mp4" loop autoplay playsinline preload="metadata" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:-1;"></video>
+    <video id="bg_video_map_escape" src="assets/maps/map_escape.mp4" loop autoplay playsinline preload="metadata" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;z-index:-1;"></video>
   </div>
   <!-- ===== 开场引导遮罩 ===== -->
   <!-- ===== 开屏片头（视频播放，播完/跳过进入） ===== -->
@@ -3122,9 +3122,12 @@ var Album = (function () {
      ui_dialogue → assets/ui/ui_dialogue.png
      ui_popup    → assets/ui/ui_popup.png
      bgm_scene   → assets/audio/bgm_scene.mp3（经 AudioManager.setMusic 接入） */
-  ["map_classroom", "map_classroom_dusk", "map_rice", "map_final", "player_cat", "memory_peach", "memory_textbook", "memory_content_peach_01", "memory_chat_01", "memory_diary_01", "player_voice_01", "memory_textbook_01", "gift_box", "memory_baoji_station", "photo_panda", "photo_group", "memory_sunset_01", "memory_sunset_02", "memory_signature_01", "memory_signature_02", "memory_train_junior", "memory_train_senior", "memory_sakura_girl_01", "memory_sakura_bag_01", "memory_rain_umbrella", "memory_rain_letter", "memory_gift_balloon_01", "memory_gift_balloon_02", "memory_gift_balloon_03", "memory_sakura_tree_01", "memory_sakura_tree_02", "memory_sakura_ground_01", "memory_sakura_building", "memory_rice_note", "memory_bar_note", "memory_bar_phone"].forEach(function (id) {
-    Assets.load(id);
-  });
+  /* 资源预加载改为"视频开始播放后才触发"（视频优先下载，播放期间后台加载图片等资源） */
+  window.__lazyPreload = function () {
+    ["map_classroom", "map_classroom_dusk", "map_rice", "map_final", "player_cat", "memory_peach", "memory_textbook", "memory_content_peach_01", "memory_chat_01", "memory_diary_01", "player_voice_01", "memory_textbook_01", "gift_box", "memory_baoji_station", "photo_panda", "photo_group", "memory_sunset_01", "memory_sunset_02", "memory_signature_01", "memory_signature_02", "memory_train_junior", "memory_train_senior", "memory_sakura_girl_01", "memory_sakura_bag_01", "memory_rain_umbrella", "memory_rain_letter", "memory_gift_balloon_01", "memory_gift_balloon_02", "memory_gift_balloon_03", "memory_sakura_tree_01", "memory_sakura_tree_02", "memory_sakura_ground_01", "memory_sakura_building", "memory_rice_note", "memory_bar_note", "memory_bar_phone"].forEach(function (id) {
+      Assets.load(id);
+    });
+  };
 
   /* 点击换算：DOM 事件 → 画布逻辑坐标 → 世界坐标（镜头裁剪后两者不再一致） */
   function toInternal(e) {
@@ -3443,6 +3446,11 @@ var Album = (function () {
     snd.style.display = "none";
     var p = v.play();
     if (p && p.catch) p.catch(function () {});
+  });
+  /* 视频一开始播放，就立刻在后台开始加载其他资源（视频播放期间预加载） */
+  var __preStarted = false;
+  v.addEventListener("playing", function () {
+    if (!__preStarted && window.__lazyPreload) { __preStarted = true; window.__lazyPreload(); }
   });
   var p0 = v.play();
   if (p0 && p0.catch) p0.catch(function () {});
