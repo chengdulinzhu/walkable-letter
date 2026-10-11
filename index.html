@@ -233,7 +233,11 @@ body{
 #splash{position:absolute;inset:0;z-index:300;background:#000;display:flex;align-items:center;justify-content:center}
 #splash video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
 #splash_skip{position:absolute;top:14px;right:16px;z-index:3;cursor:pointer;font-family:monospace;font-size:14px;color:#faf3e3;background:rgba(0,0,0,.45);border:1px solid rgba(250,243,227,.5);border-radius:6px;padding:6px 12px;letter-spacing:1px}
-#splash_sound{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:3;cursor:pointer;font-family:monospace;font-size:13px;color:#faf3e3;background:rgba(0,0,0,.55);border:1px solid rgba(250,243,227,.55);border-radius:20px;padding:8px 18px;letter-spacing:1px}
+#splash_sound{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);z-index:3;cursor:pointer;font-family:monospace;font-size:13px;color:#faf3e3;background:rgba(0,0,0,.55);border:1px solid rgba(250,243,227,.55);border-radius:20px;padding:8px 18px;letter-spacing:1px}
+#splash_ctrl{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:3;width:82%;display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.45);border:1px solid rgba(250,243,227,.35);border-radius:8px;padding:8px 12px}
+#splash_pause{background:none;border:none;cursor:pointer;font-size:16px;color:#faf3e3;line-height:1;padding:0 4px;flex:0 0 auto;font-family:monospace}
+.sp_playbar{flex:1;height:6px;background:rgba(255,255,255,.25);border-radius:3px;cursor:pointer;position:relative}
+#splash_prog{position:absolute;left:0;top:0;height:100%;width:0;background:#e0c188;border-radius:3px}
 #splash_progress{position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:3;width:70%;text-align:center}
 .sp_bar{height:12px;background:rgba(0,0,0,.5);border:2px solid #3a4058;border-radius:6px;overflow:hidden}
 #sp_fill{height:100%;width:0;background:linear-gradient(90deg,#c9a876,#e0c188);transition:width .3s}
@@ -401,6 +405,10 @@ body{
     <div id="splash_progress" class="hidden">
       <div class="sp_bar"><div id="sp_fill"></div></div>
       <div id="sp_text">加载中 0%</div>
+    </div>
+    <div id="splash_ctrl">
+      <button id="splash_pause" type="button" aria-label="暂停/播放">⏸</button>
+      <div class="sp_playbar" id="splash_playbar"><div id="splash_prog"></div></div>
     </div>
   </div>
   <div id="startoverlay" style="position:absolute;inset:0;z-index:100;background:rgba(40,30,20,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;">
@@ -3371,6 +3379,28 @@ var Album = (function () {
     if (entered) return; entered = true;
     splash.classList.add("hidden");
   }
+  var ctrl = document.getElementById("splash_ctrl");
+  var pauseBtn = document.getElementById("splash_pause");
+  var playbar = document.getElementById("splash_playbar");
+  var progbar = document.getElementById("splash_prog");
+  function updProg() {
+    if (v.duration && isFinite(v.duration)) {
+      progbar.style.width = (v.currentTime / v.duration * 100) + "%";
+    }
+    pauseBtn.textContent = v.paused ? "▶" : "⏸";
+  }
+  pauseBtn.addEventListener("click", function () {
+    if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+    else { v.pause(); }
+  });
+  v.addEventListener("timeupdate", updProg);
+  v.addEventListener("play", updProg);
+  v.addEventListener("pause", updProg);
+  playbar.addEventListener("click", function (e) {
+    var r = playbar.getBoundingClientRect();
+    var ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    if (v.duration && isFinite(v.duration)) { v.currentTime = ratio * v.duration; }
+  });
   setInterval(function () {
     var tot = registered.length, rc = readyCount();
     var pct = tot ? Math.round(rc / tot * 100) : 100;
@@ -3380,12 +3410,13 @@ var Album = (function () {
   }, 200);
   v.addEventListener("ended", function () {
     if (allReady()) enter();
-    else { waiting = true; prog.classList.remove("hidden"); }
+    else { ctrl.classList.add("hidden"); waiting = true; prog.classList.remove("hidden"); }
   });
   skip.addEventListener("click", function () {
     if (allReady()) { enter(); }
     else {
       try { v.currentTime = 0; v.pause(); } catch (e) {}
+      ctrl.classList.add("hidden");
       waiting = true;
       prog.classList.remove("hidden");
     }
