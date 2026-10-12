@@ -154,7 +154,7 @@ body{
   color:var(--gold);font-size:12px;padding:5px 14px;letter-spacing:1px;
   white-space:nowrap;max-width:92%;text-align:center;overflow:hidden;text-overflow:ellipsis;
 }
-#pad{position:absolute;right:85px;bottom:28%;width:56px;height:56px;z-index:6;display:none;touch-action:none;cursor:grab}
+#pad{position:absolute;left:64px;bottom:24%;width:56px;height:56px;z-index:6;display:none;touch-action:none;cursor:grab}
 #padball{position:absolute;left:0;top:0;width:56px;height:56px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.5),rgba(255,255,255,.22));
   border:1.5px solid rgba(255,255,255,.45);
@@ -178,7 +178,7 @@ body{
 .ptitle{background:#2b3150;color:var(--gold);padding:7px 12px;font-size:13px;letter-spacing:3px;border-bottom:2px solid #000}
 #ptpl{display:flex;flex-direction:column;padding:12px 12px 4px}
 .pimg{width:100%;border:2px dashed #4a5170;background:#10131c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--dim);font-size:12px;letter-spacing:1px}
-.pimg img{max-width:100%;max-height:52vh;height:auto;display:block;object-fit:contain}
+.pimg img{max-width:100%;max-height:36vh;height:auto;display:block;object-fit:contain}
 .picon{width:56px;height:56px;image-rendering:pixelated;border:2px solid #000;background:#171a26}
 .pimgnote{margin:8px 0 0;font-size:11px;color:var(--dim);text-align:center;line-height:1.6}
 .plines{font-size:13px;line-height:1.9;color:var(--ink);margin-top:10px}
@@ -2742,14 +2742,6 @@ var Hotspots = (function () {
         ctx.restore();
       }
     });
-    if (allCollected()) {
-      ctx.save();
-      ctx.globalAlpha = 0.5 + Math.sin(time * 3) * 0.3;
-      ctx.fillStyle = "#b8e986";
-      ctx.font = "10px monospace";
-      ctx.fillText("→ 出门", 24, 250);
-      ctx.restore();
-    }
   }
   function hitTest(x, y) {
     var PAD = 16; /* 手机端手指点不准，热区外扩 16px */
