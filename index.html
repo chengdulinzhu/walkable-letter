@@ -1454,7 +1454,7 @@ var AudioManager = (function () {
         if (done && self._rampT) { clearInterval(self._rampT); self._rampT = null; }
       }, 50);
     },
-    duck: function () { this._duckTarget = 0.12; this._ramp(); },
+    duck: function () { this._duckTarget = 0; this._ramp(); },
     unduck: function () { this._duckTarget = musicVolume; this._ramp(); },
     /* 保留曲目（不擅自使用）：《总有一天你会出现在你身边》——之后由你决定放开场 / 结尾 / 主题。 */
     reservedSong: "《总有一天你会出现在你身边》"
@@ -1512,7 +1512,7 @@ var MapRenderer = (function () {
       var el = document.getElementById("bg_video_" + vid);
       if (el) { el.pause(); }
     });
-    /* 视频背景：切换到下雨/逃离场景时手动播放；这些视频有声音，播放时背景音乐自动渐弱 */
+    /* 视频背景：切换到下雨/列车奔跑场景时手动播放；这些视频有声，播放时背景音乐渐弱关掉，切走恢复 */
     if (assetId === "map_rain" || assetId === "map_escape") {
       var video = document.getElementById("bg_video_" + assetId);
       if (video) {
@@ -2329,6 +2329,8 @@ var Popup = (function () {
     onCloseCb = onClose || null;
     root.classList.remove("hidden");
     AudioManager.popupOpen();
+    /* 黑板搞怪视频（第一次见面/咪郡王）：背景音乐渐弱关掉，避免和视频音轨打架 */
+    if (memory.id === "memory_blackboard") { AudioManager.duck(); }
   }
   function close() {
     if (!root.classList.contains("hidden")) {
@@ -2341,6 +2343,8 @@ var Popup = (function () {
       audios.forEach(function(a) { a.pause(); a.currentTime = 0; });
       var cb = onCloseCb; onCloseCb = null;
       if (cb) { cb(); }
+      /* 弹窗关闭（含黑板视频结束）：背景音乐渐弱恢复 */
+      AudioManager.unduck();
     }
   }
   function isOpen() { return root && !root.classList.contains("hidden"); }
@@ -2461,14 +2465,12 @@ Popup.registerTemplate("pink", function (root, memory) {
   lines.innerHTML = memory.content.lines.join("<br>");
   box.appendChild(lines);
 
-  /* 自动播放音频（如果有，延迟500ms等图片先显示）；播放时背景音乐自动渐弱，播完恢复 */
+  /* 自动播放音频（如果有，延迟500ms等图片先显示） */
   if (memory.content.audio) {
     setTimeout(function() {
       var audio = new Audio(memory.content.audio);
       audio.volume = 0.8;
-      AudioManager.duck();
-      audio.play().catch(function(e) { console.log("audio play error:", e); AudioManager.unduck(); });
-      audio.addEventListener("ended", function () { AudioManager.unduck(); });
+      audio.play().catch(function(e) { console.log("audio play error:", e); });
     }, 500);
   }
 });
