@@ -1419,12 +1419,19 @@ var AudioManager = (function () {
     getSfxVolume: function () { return sfxVolume; },
     setMusicVolume: function (v) {
       musicVolume = v;
-      /* 调整所有音乐的音量 */
+      /* 调整所有音乐槽的音量 */
       for (var slot in this.music) {
         if (this.music[slot]) {
           this.music[slot].volume = v;
         }
       }
+      /* 同步正在播放的雨/列车背景视频与弹窗视频（同属音乐类） */
+      ["map_rain", "map_escape"].forEach(function (id) {
+        var el = document.getElementById("bg_video_" + id);
+        if (el && !el.paused) { el.volume = v; }
+      });
+      var pv = document.querySelector("#popup video");
+      if (pv) { pv.volume = v; }
     },
     getMusicVolume: function () { return musicVolume; },
     /* 音乐层：只留插槽，之后替换歌曲不用改核心代码。
@@ -1516,7 +1523,7 @@ var MapRenderer = (function () {
     if (assetId === "map_rain" || assetId === "map_escape") {
       var video = document.getElementById("bg_video_" + assetId);
       if (video) {
-        video.volume = 0.02;
+        video.volume = AudioManager.getMusicVolume(); /* 跟随音乐滑块 */
         video.play().catch(function(e) { console.log("video play error:", e); });
         AudioManager.duck();
       }
@@ -2433,6 +2440,7 @@ Popup.registerTemplate("pink", function (root, memory) {
     vid.autoplay = true;
     vid.loop = true;
     vid.muted = false;
+    vid.volume = AudioManager.getMusicVolume(); /* 跟随音乐滑块 */
     imgBox.appendChild(vid);
   } else {
     var im = document.createElement("img");
@@ -3466,6 +3474,8 @@ var Album = (function () {
   function enter() {
     if (entered) return; entered = true;
     splash.classList.add("hidden");
+    /* 声音和画面一起停：跳过/播完进入时，暂停开屏视频声音 */
+    try { v.pause(); } catch (e) {}
   }
   var ctrl = document.getElementById("splash_ctrl");
   var pauseBtn = document.getElementById("splash_pause");
