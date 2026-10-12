@@ -70,7 +70,7 @@ body{
   background:linear-gradient(to top, rgba(12,14,22,.96) 40%, rgba(12,14,22,.84));
   border-top:2px solid #b8864f;
   padding:12px 16px 14px;
-  max-height:46%;overflow:hidden;
+  max-height:58%;overflow:hidden;
   cursor:pointer;user-select:none;
   box-shadow:0 -6px 24px rgba(0,0,0,.35);
 }
@@ -88,7 +88,7 @@ body{
 .dinner{width:100%;margin:0 auto;position:relative;max-width:560px;padding-top:6px}
 #dtext{
   font-size:16px;line-height:1.8;letter-spacing:.4px;color:#f6efe0;
-  min-height:40px;max-height:calc(52vh - 92px);overflow-y:auto;
+  min-height:40px;max-height:calc(54vh - 90px);overflow-y:auto;
   scrollbar-width:thin;padding-left:44px;
 }
 #dbar{margin-top:8px;height:4px;background:rgba(255,255,255,.14);border-radius:2px;position:relative}
@@ -2476,14 +2476,7 @@ Popup.registerTemplate("pink", function (root, memory) {
   lines.innerHTML = memory.content.lines.join("<br>");
   box.appendChild(lines);
 
-  /* 自动播放音频（如果有，延迟500ms等图片先显示） */
-  if (memory.content.audio) {
-    setTimeout(function() {
-      var audio = new Audio(memory.content.audio);
-      audio.volume = 0.8;
-      audio.play().catch(function(e) { console.log("audio play error:", e); });
-    }, 500);
-  }
+  /* 相框弹窗不再自动播放bgm（用户要求取消，避免与背景音乐/其他音轨冲突） */
 });
 
 /* 播放器模板：老式语音播放器界面，点按钮放语音 */
@@ -2839,8 +2832,7 @@ var Hotspots = (function () {
   function closeDialog() {
     current = null;
     pop.style.display = "none";
-    /* 关闭弹窗后，如果是信件暂停点，解锁信件 */
-    if (focus) { Dialogue.resume(focus); }
+    /* 类型1对白弹窗关闭：不影响必选项闪光点（不再误清 focus/waiting，避免闪光点消失/最终视频不触发） */
   }
   function isOpen() { return !!current; }
   function onClick(x, y) {
