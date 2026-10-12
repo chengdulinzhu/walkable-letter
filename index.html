@@ -96,7 +96,7 @@ body{
 #dnext{position:absolute;right:8px;bottom:8px;color:#ffd166;font-size:18px;animation:blink 1s steps(2) infinite;font-weight:bold}
 #dprev{position:absolute;left:14px;top:44px;color:#ffd166;font-size:17px;font-weight:bold;cursor:pointer;padding:2px 6px;opacity:.95}
 #dprev:active{transform:translateY(1px)}
-#hstext{max-height:3.4em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all}
+#hstext{max-height:38vh;overflow-y:auto;word-break:break-all;line-height:1.7;padding:2px 2px;white-space:normal;-webkit-overflow-scrolling:touch}
 #controls{font-size:10px;color:#9a8f7d;margin-top:8px;letter-spacing:1px;text-align:right;padding-right:30px;font-family:monospace}
 @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
 
@@ -166,7 +166,7 @@ body{
 #padring.on{display:block}
 @media (pointer:coarse){#pad{display:block}}
 
-.overlay{position:absolute;inset:0;z-index:20;background:rgba(7,8,13,.62);display:flex;align-items:center;justify-content:center}
+.overlay{position:absolute;inset:0;z-index:20;background:rgba(7,8,13,.3);display:flex;align-items:center;justify-content:center}
 #popup{z-index:30}
 .hidden{display:none!important}
 .pwin{
@@ -1239,10 +1239,7 @@ var CONTENT = {
             memory: "memory_running",
             scene: "map_building" },
 
-          /* 下雨（map_rain） */
-          { id: "rain_window", x: 200, y: 100, w: 80, h: 80,
-            memory: "memory_rain",
-            scene: "map_rain" },
+          /* 下雨（map_rain）：记忆自动弹出，无点击热区 */
 
           /* 樱花（map_sakura） */
           { id: "sakura_tree", x: 30, y: 30, w: 180, h: 180,
@@ -2695,8 +2692,8 @@ var Hotspots = (function () {
       /* 纯对白（类型1）不画闪光点 */
       if (!hs.memory) { return; }
       var isRequired = hs.required; /* 必选项 */
-      /* 已收集的热区，不画闪光点 */
-      if (collected[hs.id]) { return; }
+      /* 已收集到相册的热区（用持久收集状态，切场景不丢），不画闪光点 */
+      if (Collection.has(hs.memory) || Triggers.isCollected(hs.memory)) { return; }
       /* 计算小猫和热区的距离 */
       var playerPos = Player.state();
       var hcx = hs.x + hs.w / 2, hcy = hs.y + hs.h / 2;
@@ -2816,8 +2813,13 @@ var Hotspots = (function () {
       var hcx = current.x + current.w / 2;
       var hcy = current.y;
       var sp = Camera.toScreen(hcx, hcy - 8);
-      pop.style.left = Math.max(4, Math.min(88, sp.x * 100)) + "%";
-      pop.style.top = Math.max(6, Math.min(70, sp.y * 100)) + "%";
+      /* 锚定在小猫/热区上方，但 clamp 保证整个弹窗始终完整在屏幕内（避免最左/最右/最上端看不全） */
+      var pW = pop.offsetWidth || 300, pH = pop.offsetHeight || 120;
+      var scrW = window.innerWidth || 375, scrH = window.innerHeight || 600;
+      var halfWpct = (pW / scrW) * 50;      /* 弹窗一半宽度对应的百分比 */
+      var fullHpct = (pH / scrH) * 100;      /* 弹窗高度对应的百分比 */
+      pop.style.left = Math.max(halfWpct, Math.min(100 - halfWpct, sp.x * 100)) + "%";
+      pop.style.top = Math.max(fullHpct, Math.min(100 - fullHpct, sp.y * 100)) + "%";
       pop.style.transform = "translate(-50%,-100%)";
     }
     /* 靠近自动弹对白：小猫靠近带 autoDialog 字段的热区时，自动弹一句（只弹一次） */
