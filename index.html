@@ -308,6 +308,17 @@ body{
       </div>
     </div>
     <!-- ===== 结尾 ===== -->
+    <!-- ===== 最终彩蛋确认弹窗（收集齐 + 翻到最后一页时弹出） ===== -->
+    <div id="endingask" class="overlay hidden">
+      <div class="ewin" style="max-width: 400px; text-align:center;">
+        <div class="ptitle">▌ 恭喜你</div>
+        <p style="line-height:1.9;margin-top:8px;">你已经找完了所有的东西。<br>现在要打开最终的彩蛋吗？</p>
+        <div class="ebtns">
+          <button id="eaOpen" class="pxbtn" type="button" style="background:#ffd0e0;">打开彩蛋</button>
+          <button id="eaLater" class="pxbtn" type="button" style="background:#6b7280;color:#fff;">再看看</button>
+        </div>
+      </div>
+    </div>
     <div id="ending" class="overlay hidden">
       <div class="ewin" style="max-width: 400px;">
         <div class="ptitle" style="text-align:center">▌ 信，读完了</div>
@@ -1921,7 +1932,7 @@ var Dialogue = (function () {
     if (index >= segs.length) {
       /* 检查是不是所有热区都收集完了 */
       if (Hotspots.allCollected()) {
-        Ending.show();
+        Ending.askConfirm(); /* 收集齐：先弹"恭喜+打开彩蛋"确认，不直接播放 */
       } else {
         /* 没有收集完，提醒他倒回去找 */
         Bubble.show("还有一些回忆没有找到，\n倒回去看看吧...（实在找不到的话，可以在相册里直接查看最终彩蛋）", null, null, 5000, "item");
@@ -2898,14 +2909,26 @@ var FullLetter = (function () {
 
 /* ================= SRC: ENDING（信读完的结尾） ================= */
 var Ending = (function () {
-  var root;
+  var root, ask;
   function init() {
     root = document.getElementById("ending");
+    ask = document.getElementById("endingask");
     document.getElementById("eLetter").addEventListener("click", function () {
       root.classList.add("hidden");
       FullLetter.show();
     });
     document.getElementById("eAgain").addEventListener("click", restart);
+    document.getElementById("eaOpen").addEventListener("click", function () {
+      ask.classList.add("hidden");
+      show();
+    });
+    document.getElementById("eaLater").addEventListener("click", function () {
+      ask.classList.add("hidden");
+    });
+  }
+  /* 收集齐 + 翻到最后一页：先弹确认，玩家点"打开彩蛋"才播放最终视频 */
+  function askConfirm() {
+    ask.classList.remove("hidden");
   }
   function show() {
     root.classList.remove("hidden");
@@ -2927,7 +2950,7 @@ var Ending = (function () {
     Player.spawn(SceneCore.spawn().x, SceneCore.spawn().y);
     Dialogue.start();
   }
-  return { init: init, show: show, isOpen: isOpen };
+  return { init: init, show: show, isOpen: isOpen, askConfirm: askConfirm };
 })();
 
 /* ================= SRC: SCENE HINT（画布顶部的记忆提示条） ================= */
