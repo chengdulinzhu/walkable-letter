@@ -96,7 +96,7 @@ body{
 #dnext{position:absolute;right:8px;bottom:8px;color:#ffd166;font-size:18px;animation:blink 1s steps(2) infinite;font-weight:bold}
 #dprev{position:absolute;left:14px;top:44px;color:#ffd166;font-size:17px;font-weight:bold;cursor:pointer;padding:2px 6px;opacity:.95}
 #dprev:active{transform:translateY(1px)}
-#hstext{max-height:2.7em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all}
+#hstext{max-height:3.4em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all}
 #controls{font-size:10px;color:#9a8f7d;margin-top:8px;letter-spacing:1px;text-align:right;padding-right:30px;font-family:monospace}
 @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
 
@@ -1425,13 +1425,6 @@ var AudioManager = (function () {
           this.music[slot].volume = v;
         }
       }
-      /* 同步正在播放的雨/列车背景视频与弹窗视频（同属音乐类） */
-      ["map_rain", "map_escape"].forEach(function (id) {
-        var el = document.getElementById("bg_video_" + id);
-        if (el && !el.paused) { el.volume = v; }
-      });
-      var pv = document.querySelector("#popup video");
-      if (pv) { pv.volume = v; }
     },
     getMusicVolume: function () { return musicVolume; },
     /* 音乐层：只留插槽，之后替换歌曲不用改核心代码。
@@ -1523,7 +1516,7 @@ var MapRenderer = (function () {
     if (assetId === "map_rain" || assetId === "map_escape") {
       var video = document.getElementById("bg_video_" + assetId);
       if (video) {
-        video.volume = AudioManager.getMusicVolume(); /* 跟随音乐滑块 */
+        video.volume = (assetId === "map_rain") ? 0.10 : 0.15; /* 背景视频固定低音量：下雨10%、列车15% */
         video.play().catch(function(e) { console.log("video play error:", e); });
         AudioManager.duck();
       }
@@ -2012,9 +2005,16 @@ var Dialogue = (function () {
     } else if (m.trigger.type === "drop") {
       /* 礼物盒特殊：用 GiftBox 模块（气球放飞） */
       if (m.id === "memory_gift") {
+        /* 已收集完（气球点完）回退时不再重新掉落；未收集完回退仍会重新触发掉落 */
+        if (Triggers.isCollected("memory_gift")) { return; }
         var ps = Player.state();
-        /* 礼物盒放小猫右边远一点的位置，引导小猫跑过去 */
-        GiftBox.spawn(ps.x + 120, ps.y);
+        var cam = Camera.rect(); /* 当前可见窗口（世界坐标） */
+        /* 礼物盒默认放小猫右边；若小猫靠近画面左右边缘，则放画面中间，避免超出可视区点不到气球 */
+        var gx = ps.x + 120;
+        if (ps.x < cam.x + 60 || ps.x > cam.x + cam.w - 60) {
+          gx = cam.x + cam.w / 2;
+        }
+        GiftBox.spawn(gx, ps.y);
         Bubble.show("好像有个礼物盒在那边…跑过去看看？", null, null, 3200);
       } else {
         MemoryDrop.spawn(m);
@@ -2144,12 +2144,9 @@ var MemoryDrop = (function () {
       Collection.mark(m.id);
       SceneHint.hide();
       Album.refresh();
-      /* 检查是不是所有热区都收集完了，如果是，触发彩蛋视频 */
+      /* 收集齐物品：只提示，最终视频在翻到最后一页时才触发 */
       if (Hotspots.allCollected()) {
         Bubble.show("你已经找到了所有的回忆", null, null, 3000, "item");
-        setTimeout(function() {
-          Ending.show();
-        }, 2000);
       }
     });
   }
@@ -2255,12 +2252,9 @@ var GiftBox = (function () {
               Collection.mark("memory_gift");
               Album.refresh();
               Dialogue.resume();
-              /* 检查是不是所有热区都收集完了，如果是，触发彩蛋视频 */
+              /* 收集齐物品：只提示，最终视频在翻到最后一页时才触发 */
               if (Hotspots.allCollected()) {
                 Bubble.show("你已经找到了所有的回忆", null, null, 3000, "item");
-                setTimeout(function() {
-                  Ending.show();
-                }, 2000);
               }
             }
           });
@@ -2355,7 +2349,7 @@ var Popup = (function () {
     }
   }
   function isOpen() { return root && !root.classList.contains("hidden"); }
-  function reset() { if (root) { root.classList.add("hidden"); } onCloseCb = null; }
+  function reset() { if (root) { root.classList.add("hidden"); } onCloseCb = null; AudioManager.unduck(); }
   return { init: init, registerTemplate: registerTemplate, open: open, close: close, isOpen: isOpen, reset: reset };
 })();
 
@@ -2440,7 +2434,7 @@ Popup.registerTemplate("pink", function (root, memory) {
     vid.autoplay = true;
     vid.loop = true;
     vid.muted = false;
-    vid.volume = AudioManager.getMusicVolume(); /* 跟随音乐滑块 */
+    vid.volume = 0.15; /* 掉下来的(黑板)视频固定低音量 */
     imgBox.appendChild(vid);
   } else {
     var im = document.createElement("img");
@@ -2852,12 +2846,9 @@ var Hotspots = (function () {
       Popup.open(MEMORIES[hs.memory], function () {
         /* 关闭弹窗后，恢复底部对白 */
         Dialogue.resume(hs.id);
-        /* 检查是不是所有热区都收集完了，如果是，触发彩蛋视频 */
+        /* 收集齐物品：只提示，最终视频在翻到最后一页时才触发 */
         if (allCollected()) {
           Bubble.show("你已经找到了所有的回忆", null, null, 3000, "item");
-          setTimeout(function() {
-            Ending.show();
-          }, 2000);
         }
       });
       return true;
