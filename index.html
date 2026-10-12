@@ -104,7 +104,8 @@ body{
   position:absolute;z-index:6;display:none;transform:translate(-50%,-100%);
   left:50%;top:40%;
   background:#e8f4ff;color:#1a3a5c;border:2px solid #000;box-shadow:3px 3px 0 rgba(0,0,0,.45);
-  padding:3px 9px;font-size:12px;white-space:nowrap;
+  padding:5px 10px;font-size:12px;white-space:normal;line-height:1.45;
+  max-width:min(80vw,280px);text-align:center;word-break:break-all;
 }
 #catbubble.bubble-item{
   background:#ffffff;color:#333333;
@@ -2678,7 +2679,8 @@ var Hotspots = (function () {
       "memory_bar_phone"
     ];
     for (var i = 0; i < allMemories.length; i++) {
-      if (!Collection.has(allMemories[i])) { return false; }
+      /* 与相册格子判定统一：不管用 Collection 还是 Triggers 标记，都算已收集 */
+      if (!Collection.has(allMemories[i]) && !Triggers.isCollected(allMemories[i])) { return false; }
     }
     return true;
   }
