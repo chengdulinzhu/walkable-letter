@@ -1901,7 +1901,7 @@ var Camera = (function () {
 
 /* ================= SRC: DIALOGUE（信件推进：分段 + 打字机 + 触发分发，逻辑不变） ================= */
 var Dialogue = (function () {
-  var segs = LETTER.segments, index = 0, typing = false, timer = null;
+  var segs = LETTER.segments, index = 0, typing = false, timer = null, reachedEnd = false;
   var waiting = null; /* 当前等待的热区 id，玩家收集完后解除 */
   var textEl, barEl, nextEl;
   function init() {
@@ -1930,6 +1930,7 @@ var Dialogue = (function () {
   }
   function show() {
     if (index >= segs.length) {
+      reachedEnd = true; /* 到过最后一页即保持；回退找完后再收集时可直接触发 */
       /* 检查是不是所有热区都收集完了 */
       if (Hotspots.allCollected()) {
         Ending.askConfirm(); /* 收集齐：先弹"恭喜+打开彩蛋"确认，不直接播放 */
@@ -2077,7 +2078,7 @@ var Dialogue = (function () {
       nextEl.style.display = "block";
     }
   }
-  return { init: init, start: start, advance: advance, back: back, resume: resume, currentIndex: function () { return index; }, typing: function () { return typing; }, currentWaiting: function () { return waiting; } };
+  return { init: init, start: start, advance: advance, back: back, resume: resume, currentIndex: function () { return index; }, typing: function () { return typing; }, currentWaiting: function () { return waiting; }, reachedEnd: function () { return reachedEnd; } };
 })();
 
 /* ================= SRC: MEMORY DROP（掉落物理不变；物件渲染走 Assets + 镜头换算，无图回退程序化图标） ================= */
@@ -2164,9 +2165,13 @@ var MemoryDrop = (function () {
       Collection.mark(m.id);
       SceneHint.hide();
       Album.refresh();
-      /* 收集齐物品：只提示，最终视频在翻到最后一页时才触发 */
+      /* 收集齐物品：已到过最后一页就直接弹确认彩蛋，否则提示翻到最后一页 */
       if (Hotspots.allCollected()) {
-        Bubble.show("你已经找到了所有的回忆", null, null, 3000, "item");
+        if (Dialogue.reachedEnd()) {
+          Ending.askConfirm();
+        } else {
+          Bubble.show("你已经找到了所有的回忆，翻到最后一页就能打开彩蛋了", null, null, 3000, "item");
+        }
       }
     });
   }
@@ -2272,9 +2277,13 @@ var GiftBox = (function () {
               Collection.mark("memory_gift");
               Album.refresh();
               Dialogue.resume();
-              /* 收集齐物品：只提示，最终视频在翻到最后一页时才触发 */
+              /* 收集齐物品：已到过最后一页就直接弹确认彩蛋，否则提示翻到最后一页 */
               if (Hotspots.allCollected()) {
-                Bubble.show("你已经找到了所有的回忆", null, null, 3000, "item");
+                if (Dialogue.reachedEnd()) {
+                  Ending.askConfirm();
+                } else {
+                  Bubble.show("你已经找到了所有的回忆，翻到最后一页就能打开彩蛋了", null, null, 3000, "item");
+                }
               }
             }
           });
@@ -2856,9 +2865,13 @@ var Hotspots = (function () {
       Popup.open(MEMORIES[hs.memory], function () {
         /* 关闭弹窗后，恢复底部对白 */
         Dialogue.resume(hs.id);
-        /* 收集齐物品：只提示，最终视频在翻到最后一页时才触发 */
+        /* 收集齐物品：已到过最后一页就直接弹确认彩蛋，否则提示翻到最后一页 */
         if (allCollected()) {
-          Bubble.show("你已经找到了所有的回忆", null, null, 3000, "item");
+          if (Dialogue.reachedEnd()) {
+            Ending.askConfirm();
+          } else {
+            Bubble.show("你已经找到了所有的回忆，翻到最后一页就能打开彩蛋了", null, null, 3000, "item");
+          }
         }
       });
       return true;
