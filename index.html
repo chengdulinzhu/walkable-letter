@@ -1455,7 +1455,16 @@ var AudioManager = (function () {
       }, 50);
     },
     duck: function () { this._duckTarget = 0; this._ramp(); },
-    unduck: function () { this._duckTarget = musicVolume; this._ramp(); },
+    unduck: function () {
+      this._duckTarget = musicVolume;
+      this._ramp();
+      /* 手机端视频/音效抢占会把背景音乐暂停：恢复音量时若已暂停则重新播放 */
+      var self = this;
+      for (var slot in this.music) {
+        var a = this.music[slot];
+        if (a && a.paused && !muted) { var p = a.play(); if (p && p.catch) { p.catch(function () {}); } }
+      }
+    },
     /* 保留曲目（不擅自使用）：《总有一天你会出现在你身边》——之后由你决定放开场 / 结尾 / 主题。 */
     reservedSong: "《总有一天你会出现在你身边》"
   };
@@ -2014,6 +2023,8 @@ var Dialogue = (function () {
         if (ps.x < cam.x + 60 || ps.x > cam.x + cam.w - 60) {
           gx = cam.x + cam.w / 2;
         }
+        /* 兜底：无论怎样，保证礼物盒（含第三个气球 x+20）落在可视窗口内 */
+        gx = Math.max(cam.x + 25, Math.min(cam.x + cam.w - 55, gx));
         GiftBox.spawn(gx, ps.y);
         Bubble.show("好像有个礼物盒在那边…跑过去看看？", null, null, 3200);
       } else {
@@ -3080,8 +3091,8 @@ var Album = (function () {
           item.style.cssText = "background:#fff0d9;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:monospace;color:#6b4a2a;font-size:12px;line-height:1.5;";
           item.textContent = h.dialog;
         } else {
-          /* 未触发：显示「尚未发现」 */
-          item.style.cssText = "background:#eee;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:monospace;color:#999;font-size:12px;line-height:1.5;";
+          /* 未触发：显示「尚未发现」（浅底深字，保证可读） */
+          item.style.cssText = "background:#e8e0d0;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:monospace;color:#6b4a2a;font-size:12px;line-height:1.5;";
           item.textContent = "尚未发现...";
         }
         section.appendChild(item);
