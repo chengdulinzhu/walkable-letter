@@ -1948,7 +1948,7 @@ var Dialogue = (function () {
     barEl.style.width = (((index + 1) / segs.length) * 100).toFixed(1) + "%";
     /* 场景切换：读到带 scene 的段，换背景图 + 更新站标 + 画布比例；
        同时强制清场上一个场景的所有残留（对白气泡/掉落物/提示条），不跨场景 */
-    if (s.scene) {
+    if (s.scene && s.scene.asset !== MapRenderer.currentAssetId) {
       Hotspots.forceClose();
       MemoryDrop.reset();
       GiftBox.reset();
