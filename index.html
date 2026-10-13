@@ -1464,6 +1464,11 @@ var AudioManager = (function () {
       }, 50);
     },
     duck: function () { this._duckTarget = 0; this._ramp(); },
+    /* 轻度让位：背景音乐降到原音量的 ratio 倍但不完全停（用于雨/列车等需要持续情绪的片段） */
+    duckTo: function (ratio) {
+      this._duckTarget = musicVolume * ratio;
+      this._ramp();
+    },
     unduck: function () {
       this._duckTarget = musicVolume;
       this._ramp();
@@ -1534,9 +1539,10 @@ var MapRenderer = (function () {
     if (assetId === "map_rain" || assetId === "map_escape") {
       var video = document.getElementById("bg_video_" + assetId);
       if (video) {
-        video.volume = (assetId === "map_rain") ? 0.10 : 0.15; /* 背景视频固定低音量：下雨10%、列车15% */
+        video.volume = 0.04; /* 背景视频固定很低音量：下雨/列车都 4%，只留氛围 */
         video.play().catch(function(e) { console.log("video play error:", e); });
-        AudioManager.duck();
+        /* 背景音乐不停：只轻微让位（保留 70%），与雨/列车声混合，避免突兀地停-起 */
+        AudioManager.duckTo(0.7);
       }
     } else {
       AudioManager.unduck();
@@ -2472,7 +2478,7 @@ Popup.registerTemplate("pink", function (root, memory) {
     vid.autoplay = true;
     vid.loop = true;
     vid.muted = false;
-    vid.volume = 0.15; /* 掉下来的(黑板)视频固定低音量 */
+    vid.volume = 0.05; /* 掉下来的(黑板)视频固定低音量 */
     imgBox.appendChild(vid);
   } else {
     var im = document.createElement("img");
