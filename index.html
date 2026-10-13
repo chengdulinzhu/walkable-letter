@@ -2036,7 +2036,7 @@ var Dialogue = (function () {
         /* 兜底：无论怎样，保证礼物盒（含第三个气球 x+20）落在可视窗口内 */
         gx = Math.max(cam.x + 25, Math.min(cam.x + cam.w - 55, gx));
         GiftBox.spawn(gx, ps.y);
-        Bubble.show("好像有个礼物盒在那边…跑过去看看？", null, null, 3200);
+        Bubble.show("好像有个礼物盒在那边…可以挨个点击气球哦", null, null, 3200);
       } else {
         MemoryDrop.spawn(m);
       }
@@ -2285,6 +2285,9 @@ var GiftBox = (function () {
                   Bubble.show("你已经找到了所有的回忆，翻到最后一页就能打开彩蛋了", null, null, 3000, "item");
                 }
               }
+            } else {
+              /* 还有气球没点完：提示继续挨个点，防止玩家点礼物盒/空白卡关 */
+              Bubble.show("可以挨个点击气球哦", null, null, 3200);
             }
           });
         }
@@ -2303,7 +2306,13 @@ var GiftBox = (function () {
     if (allCollected()) { return null; }
     return { x: item.x, y: item.y };
   }
-  return { spawn: spawn, reset: reset, update: update, draw: draw, hitTest: hitTest, allCollected: allCollected, focusPos: focusPos, isActive: isActive };
+  function hitBox(px, py) {
+    /* 检测是否点中礼物盒盒子本体（非气球）：用于给"挨个点气球"的关卡提示 */
+    if (!item) { return false; }
+    var dx = px - item.x, dy = py - item.y;
+    return dx * dx + dy * dy < 36 * 36;
+  }
+  return { spawn: spawn, reset: reset, update: update, draw: draw, hitTest: hitTest, allCollected: allCollected, focusPos: focusPos, isActive: isActive, hitBox: hitBox };
 })();
 
 /* 程序化记忆小图标（相册网格里没有素材图时也用这个兜底） */
@@ -3264,6 +3273,11 @@ var Album = (function () {
     if (MemoryDrop.hitTest(p.x, p.y)) { MemoryDrop.collect(); return; }
     if (GiftBox.hitTest(p.x, p.y)) {
       /* 点击气球已经在 hitTest() 里处理了（弹出图片 + 检查是否全部点完） */
+      return;
+    }
+    /* 点礼物盒盒子本体（没点中气球）→ 提示挨个点气球，防止玩家点盒子无效卡关 */
+    if (GiftBox.isActive && GiftBox.isActive() && !GiftBox.allCollected() && GiftBox.hitBox(p.x, p.y)) {
+      Bubble.show("可以挨个点击气球哦", null, null, 3200);
       return;
     }
     /* 先测必选项热区（required: true） */
